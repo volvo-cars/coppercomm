@@ -1,0 +1,5 @@
+[gerrit]
+host=artinfo-gerrit-ssh.volvocars.net
+project=coppercomm
+defaultbranch=master
+defaultremote=origin
