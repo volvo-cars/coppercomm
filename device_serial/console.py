@@ -1,14 +1,10 @@
-# /*===========================================================================*\
-#  * Copyright 2018 Aptiv, Inc., All Rights Reserved.
-#  * Delphi Confidential
-# \*===========================================================================*/
 import typing
 
-from .one_update_interfaces import OneUpdateConsoleInterface, Expectations
-from .communication.serial_console_interface import SerialConsoleInterface
+from device_common.interfaces import ConsoleInterface, Expectations
+from device_serial.serial_console_interface import SerialConsoleInterface
 
 
-class OneUpdateConsole(OneUpdateConsoleInterface):
+class Console(ConsoleInterface):
     def __init__(
         self, connection_address: str, prompt: typing.Union[str, typing.List[str]], connection_name: str
     ) -> None:

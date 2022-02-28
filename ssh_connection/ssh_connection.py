@@ -1,6 +1,3 @@
-# Copyright 2021-2022 Volvo Car Corporation
-# This file is covered by LICENSE file in the root of this project
-
 import socket
 import time
 import typing

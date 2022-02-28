@@ -1,6 +1,3 @@
-# Copyright 2018-2021 Volvo Car Corporation
-# This file is covered by LICENSE file in the root of this project
-
 import contextlib
 import logging.config
 import typing
@@ -8,13 +5,11 @@ import typing
 from contextlib import ExitStack
 from dataclasses import dataclass
 
-from test_manager.devices.ci_config import Config, SerialDeviceType
-from test_manager.devices.device_adb.device_adb import Adb
-from test_manager.devices.device_factory import DeviceFactory
-from test_manager.devices.device_serial.device_serial import SerialConnection
-from test_manager.devices.loggers.device_logger import DeviceLoggerViaAdb
-from test_manager.devices.ssh_connection.ssh_connection import SSHConnection
-from test_manager.test_lib.grassland.library.log.log_dir import LogDir
+from ci_config import Config, SerialDeviceType
+from device_adb.adb_interface import Adb
+from device_factory import DeviceFactory
+from device_serial.device_serial import SerialConnection
+from ssh_connection.ssh_connection import SSHConnection
 
 _logger = logging.getLogger("device")
 
@@ -32,7 +27,6 @@ class Device:
     adb: Adb
     serial_devices: typing.Mapping[SerialDeviceType, SerialConnection]
     ssh: typing.Mapping[str, SSHConnection]
-    test_log_dir: LogDir
 
     @property
     def device_type(self):
@@ -42,14 +36,6 @@ class Device:
         _logger.info(f"The device type is: {self.config.get_device_name()}")
 
         return self.config.get_device_name()
-
-    def adb_logger(self, command: str, *, shell: bool = True) -> DeviceLoggerViaAdb:
-        return DeviceLoggerViaAdb(
-            self.config.get_adb_device_id(),
-            command,
-            test_log_dir=self.test_log_dir.name,
-            shell=shell,
-        )
 
     @staticmethod
     @contextlib.contextmanager
@@ -62,7 +48,6 @@ class Device:
                 config=factory.config,
                 adb=adb,
                 ssh=_create_ssh_connections(factory, adb),
-                test_log_dir=LogDir(test_log_dir),
                 serial_devices=factory.create_serial_devices(),
             )
             for serial_connection in device.serial_devices.values():
@@ -93,6 +78,5 @@ def _create_ssh_connections(device_factory: DeviceFactory, adb: Adb) -> typing.M
     return _LazyDict(
         {
             "broadrreach": lambda: device_factory.create_broadrreach_ssh(),
-            "adb_ssh": lambda: device_factory.create_ssh_over_adb(adb),
         }
     )

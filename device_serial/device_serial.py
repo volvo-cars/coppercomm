@@ -1,14 +1,11 @@
-# Copyright 2018-2021 Volvo Car Corporation
-# This file is covered by LICENSE file in the root of this project
-
 import logging
 import typing
 
 from collections.abc import Mapping
 
-from test_manager.devices.ci_config import Config, SerialDeviceType
-from one_update.communication.serial_console_interface import SerialConsoleInterface
-from one_update.one_update_console import OneUpdateConsole
+from ci_config import Config, SerialDeviceType
+from device_serial.serial_console_interface import SerialConsoleInterface
+from device_serial.console import Console
 
 
 # TODO: Inherit from framework-common exception type when available
@@ -16,7 +13,7 @@ class InvalidSerialDeviceError(Exception):
     pass
 
 
-class SerialConnection(OneUpdateConsole):
+class SerialConnection(Console):
     def __init__(self, config: Config, serial_device: SerialDeviceType) -> None:
         self._logger = logging.getLogger(__name__)
         self.console_object = SerialConsoleInterface(

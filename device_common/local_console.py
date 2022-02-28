@@ -10,7 +10,7 @@ import typing
 from .exceptions import CommandFailedError, TimeoutExpiredError, PatternNotFoundError
 
 
-_logger = logging.getLogger("one_update.local_console")
+_logger = logging.getLogger("local_console")
 
 
 def resolve_path(path: str) -> str:

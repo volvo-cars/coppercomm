@@ -1,13 +1,10 @@
-# Copyright 2018-2021 Volvo Car Corporation
-# This file is covered by LICENSE file in the root of this project
-
 import logging
 import typing
 
-from test_manager.devices.device_serial.device_serial import SerialConnection
-from test_manager.devices.device_adb.device_adb import Adb
-from test_manager.devices.ci_config import Config, SerialDeviceType
-from test_manager.devices.ssh_connection.ssh_connection import SSHConnection
+from device_serial.device_serial import SerialConnection
+from device_adb.adb_interface import Adb
+from ci_config import Config, SerialDeviceType
+from ssh_connection.ssh_connection import SSHConnection
 
 _logger = logging.getLogger(__name__)
 

@@ -1,15 +1,9 @@
-# Copyright 2021-2022 Volvo Car Corporation
-# This file is covered by LICENSE file in the root of this project
-
 import json
 import os
 
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Union
-
-from test_manager.devices.device_config_gen import create_device_config
-
 
 CONFIGFILE_ENV_NAME = "DEVICE_CONFIG_FILE"
 DEFAULT_CONFIG_FILENAME = "device_config.json"
@@ -29,8 +23,6 @@ class ConfigFileParseError(Exception):
     pass
 
 
-# TODO QNX serial -> Dhum
-# TODO HKP serial -> Dhuh
 class SerialDeviceType(Enum):
     QNX = "QNX"
     HKP = "HKP"
@@ -92,10 +84,7 @@ class Config:
 
     def get_device_config_path(self) -> str:
         file_path = os.path.join(self.directory, self.filename)
-        if not self.force_generate and os.path.exists(file_path):
-            return file_path
-
-        return create_device_config(dir=self.directory, name=self.filename)
+        return file_path
 
     def get_serial_device_path(self, serial_device: SerialDeviceType) -> str:
         return self.device_config_data[serial_device.value]["tty"]

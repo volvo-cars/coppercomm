@@ -1,7 +1,3 @@
-# /*===========================================================================*\
-#  * Copyright 2018 Aptiv, Inc., All Rights Reserved.
-#  * Delphi Confidential
-# \*===========================================================================*/
 from datetime import datetime, timedelta
 from typing import List, Union
 from pexpect import TIMEOUT, EOF
@@ -16,7 +12,7 @@ import sys
 import re
 import os
 
-from ..one_update_exceptions import OneUpdateConnectionError
+from device_common.exceptions import CopperCommConnectionError
 
 
 ENCODING = "ascii"
@@ -36,7 +32,7 @@ class SerialConsoleInterface(threading.Thread):
     ) -> None:
         super().__init__()
         self.connection_name = connection_name
-        parent_logger = logging.getLogger("one_update")
+        parent_logger = logging.getLogger("SerialConsole")
         self.logger = parent_logger.getChild(self.connection_name)
         self.logger.setLevel(logging.DEBUG)
 
@@ -149,7 +145,7 @@ class SerialConsoleInterface(threading.Thread):
         if not os.path.exists(connection_address):
             self._raise_exception(
                 "Connection address {} doesn't exists".format(connection_address),
-                OneUpdateConnectionError,
+                CopperCommConnectionError,
                 log_level=logging.ERROR,
             )
         if not shutil.which("lsof"):
@@ -241,7 +237,7 @@ class SerialConsoleInterface(threading.Thread):
                     if re.search(re.escape(command), self._get_line()):
                         return
                 max_retypes -= 1
-            self._raise_exception("Echo of command <{}> not found".format(command), OneUpdateConnectionError)
+            self._raise_exception("Echo of command <{}> not found".format(command), CopperCommConnectionError)
         else:
             self.connection.sendline(command)
 
@@ -301,7 +297,7 @@ class SerialConsoleInterface(threading.Thread):
             if timeout > 0 and datetime.now() > end_time:
                 if wait_for_prompt and not prompt_found:
                     self._raise_exception(
-                        "Prompt <{}> not found".format(expected_prompt_regex), OneUpdateConnectionError
+                        "Prompt <{}> not found".format(expected_prompt_regex), CopperCommConnectionError
                     )
                 if not expected:
                     self.logger.debug("Not expected <{}> have not occurred")
