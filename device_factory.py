@@ -16,14 +16,13 @@ class DeviceResourceUnavailableError(AssertionError):
 
 class DeviceFactory:
     def __init__(self):
-        # read config file on NUC and return Object based on the device stated in the JSON file("IHU", "DHU")
         self.config = Config(directory="~")
 
     def create_adb(self) -> Adb:
         return Adb(self.config.get_adb_device_id())
 
     def create_ssh_over_adb(self, adb: Adb) -> SSHConnection:
-        if self.config.get_device_name() == "DHU":
+        if self.config.get_device_name() == "device1":
             # try to wait a bit for adb in case unit was just rebooted
             adb.wait_for_state(timeout=10)
             # forward port to host, android have ssh tunnel to qnx.
@@ -35,7 +34,7 @@ class DeviceFactory:
             raise DeviceResourceUnavailableError("SSH over ADB")
 
     def create_broadrreach_ssh(self) -> SSHConnection:
-        if self.config.get_device_name() != "DHU":
+        if self.config.get_device_name() != "device1":
             raise DeviceResourceUnavailableError("Broadrreach SSH")
 
         return SSHConnection(self.config.get_qnx_ip())
@@ -51,8 +50,6 @@ class DeviceFactory:
 
     def available_serials(self) -> typing.Sequence[SerialDeviceType]:
         serials = {
-            "IHU": (SerialDeviceType.VIP, SerialDeviceType.MP),
-            "DHU": (SerialDeviceType.HKP, SerialDeviceType.QNX),
-            "IHU_EMU": (),
+            "device1": (SerialDeviceType.SupportCPU, SerialDeviceType.QNX),
         }
         return serials[self.config.get_device_name()]

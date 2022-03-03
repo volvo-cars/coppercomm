@@ -2,17 +2,17 @@
   "ADB": {
     "adb_device_id": "0x20693c6c"
   },
-  "HKP": {
+  "SupportCPU": {
     "usb_serial_mac_id": "",
     "tty": "/dev/ttyUSB0"
   },
   "QNX": {
     "usb_serial_mac_id": "",
     "tty": "/dev/ttyUSB1",
-    "ip" : "198.19.60.204"
+    "ip" : "x.x.x.x"
   },
-  "DEVICE": "DHU",
+  "DEVICE": "device1",
   "HOST": {
-    "adb_ssh_port":  "49900"
+    "adb_ssh_port":  "4"
   }
 }

@@ -8,7 +8,7 @@ pytest_plugins = "pytest_fixtures.device_fixtures"
 def test_example(test_device: Device):
     test_device.adb.gain_root_permissions(timeout=60)
     assert "asd" == test_device.adb.shell("ls")
-    test_device.serial_devices[SerialDeviceType.HKP].send_line("help")
+    test_device.serial_devices[SerialDeviceType.SupportCPU].send_line("help")
 
 
 @pytest.mark.qnx

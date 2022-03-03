@@ -5,7 +5,7 @@ https://docs.pytest.org/en/latest/how-to/writing_plugins.html?highlight=plugin#r
 
 Example:
 
-pytest_plugins = ".dhu.pytest_fixtures.device_fixtures"
+pytest_plugins = "pytest_fixtures.device_fixtures"
 
 
 def test_ping_android_dev_interface(qnx_serial_device):
@@ -48,7 +48,7 @@ def qnx_serial(device_factory: DeviceFactory) -> SerialConnection:
 
 @pytest.fixture(scope="session")
 def hkp_serial(device_factory: DeviceFactory) -> SerialConnection:
-    return device_factory.create_serial(SerialDeviceType.HKP)
+    return device_factory.create_serial(SerialDeviceType.SupportCPU)
 
 
 @pytest.fixture(scope="function")
@@ -60,14 +60,13 @@ def device_config(device_factory: DeviceFactory) -> Config:
 def test_device(
     device_factory: DeviceFactory,
     adb: Adb,
-    hkp_serial: SerialConnection,
+    support_cpu_serial: SerialConnection,
     qnx_serial: SerialConnection,
     qnx_broadrreach_ssh: SSHConnection,
-    qnx_ssh_over_adb: SSHConnection,
 ) -> Device:
     ssh = {"broadrreach": qnx_broadrreach_ssh}
     serial = {
         SerialDeviceType.QNX: qnx_serial,
-        SerialDeviceType.HKP: hkp_serial,
+        SerialDeviceType.SupportCPU: support_cpu_serial,
     }
     return Device(config=device_factory.config, adb=adb, ssh=ssh, serial_devices=serial)

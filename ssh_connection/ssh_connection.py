@@ -40,7 +40,6 @@ class SFTPTransferFailed(Exception):
     pass
 
 
-# ToDo: refactor ARTINFO-60612
 class SSHConnection:
     _ssh_mutex = threading.Lock()
 

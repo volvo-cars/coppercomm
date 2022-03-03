@@ -8,26 +8,12 @@ from typing import Dict, List, Union
 CONFIGFILE_ENV_NAME = "DEVICE_CONFIG_FILE"
 DEFAULT_CONFIG_FILENAME = "device_config.json"
 
-COMMON_MANDATORY_KEYS_IN_JSON_FILE = {"ADB"}
-DHU_MANDATORY_KEYS_IN_JSON_FILE = {"HKP", "QNX"}
-IHU_MANDATORY_KEYS_IN_JSON_FILE = {"VIP", "MP"}
-
-MANDATORY_KEYS = {
-    "IHU": IHU_MANDATORY_KEYS_IN_JSON_FILE | COMMON_MANDATORY_KEYS_IN_JSON_FILE,
-    "DHU": DHU_MANDATORY_KEYS_IN_JSON_FILE | COMMON_MANDATORY_KEYS_IN_JSON_FILE,
-    "IHU_EMU": COMMON_MANDATORY_KEYS_IN_JSON_FILE,
-}
-
-
 class ConfigFileParseError(Exception):
     pass
 
-
 class SerialDeviceType(Enum):
     QNX = "QNX"
-    HKP = "HKP"
-    VIP = "VIP"
-    MP = "MP"
+    SupportCPU = "SupportCPU"
 
 
 @dataclass
@@ -51,7 +37,6 @@ class Config:
     force_generate: bool = False
 
     def __post_init__(self) -> None:
-        # TODO add version information
         self.directory = os.path.expanduser(os.path.expandvars(self.directory))
 
         # override self.directory/self.filename if env variable set
@@ -75,13 +60,6 @@ class Config:
         with open(device_config_file_path, "r") as device_config:
             self.device_config_data: Dict = json.load(device_config)
 
-        if not MANDATORY_KEYS[self.device_config_data["DEVICE"]].issubset(self.device_config_data.keys()):
-            raise ConfigFileParseError(
-                f"Mandatory keys are not present in config file. "
-                f"Mandatory keys: {MANDATORY_KEYS[self.device_config_data['DEVICE']]} "
-                f"for device: {self.device_config_data['DEVICE']}"
-            )
-
     def get_device_config_path(self) -> str:
         file_path = os.path.join(self.directory, self.filename)
         return file_path
@@ -90,7 +68,7 @@ class Config:
         return self.device_config_data[serial_device.value]["tty"]
 
     def get_serial_prompt(self, serial_device: SerialDeviceType) -> Union[str, List[str]]:
-        return ""  # ToDo: return value from config
+        return ""
 
     def get_adb_device_id(self) -> str:
         return self.device_config_data["ADB"]["adb_device_id"]
@@ -102,7 +80,6 @@ class Config:
         return self.device_config_data["QNX"]["ip"]
 
     def get_config_version(self):
-        # TODO: Add version to device config file
         return self.device_config_data.get("version", "1")
 
     def get_host_adb_sshport(self) -> str:

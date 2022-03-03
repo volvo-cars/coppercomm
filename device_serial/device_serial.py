@@ -8,7 +8,6 @@ from device_serial.serial_console_interface import SerialConsoleInterface
 from device_serial.console import Console
 
 
-# TODO: Inherit from framework-common exception type when available
 class InvalidSerialDeviceError(Exception):
     pass
 

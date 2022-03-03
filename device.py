@@ -15,7 +15,6 @@ _logger = logging.getLogger("device")
 
 
 class DeviceError(Exception):
-    # TODO create a framework exception layer to inherit from, to see difference between testing error or framework error
     pass
 
 
@@ -55,7 +54,6 @@ class Device:
             yield device
 
 
-# TODO: remove when HKP tests are switched to use splitted fixtures instead of complete test_device fixture
 def _create_ssh_connections(device_factory: DeviceFactory, adb: Adb) -> typing.Mapping[str, SSHConnection]:
     class _LazyDict(typing.Mapping[str, SSHConnection]):
         def __init__(self, loaders: typing.Mapping[str, typing.Callable[[], SSHConnection]]):
