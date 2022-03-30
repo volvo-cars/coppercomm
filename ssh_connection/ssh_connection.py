@@ -4,7 +4,7 @@ import typing
 import logging
 import threading
 from time import sleep
-from paramiko import Channel, SFTPClient, AutoAddPolicy, SSHException, SFTPClient
+from paramiko import Channel, SFTPClient, MissingHostKeyPolicy, SSHException, SFTPClient
 from paramiko.channel import ChannelFile, ChannelStderrFile
 from paramiko.ssh_exception import NoValidConnectionsError
 from paramiko.client import SSHClient
@@ -40,6 +40,15 @@ class SFTPTransferFailed(Exception):
     pass
 
 
+class IgnoreHostKeys(MissingHostKeyPolicy):
+    def missing_host_key(self, client, hostname, key):
+        """Do nothing with the host key. Do not even warn.
+
+        Host key can change during flashing. This policy will ignore it.
+        This policy expects no known host keys. (Do not use with SSHClient.load_system_host_keys())"""
+        pass
+
+
 class SSHConnection:
     _ssh_mutex = threading.Lock()
 
@@ -50,8 +59,7 @@ class SSHConnection:
             self.port = int(port)
             self.username = username
             self.password = password
-            self.sshclient.set_missing_host_key_policy(AutoAddPolicy())
-            self.connected = False
+            self.sshclient.set_missing_host_key_policy(IgnoreHostKeys())
 
     def connect(self, timeout: typing.Optional[int] = None, keepalive_interval: typing.Optional[int] = 5) -> None:
         if not self.connected:
@@ -68,14 +76,20 @@ class SSHConnection:
                         transport = self.sshclient.get_transport()
                         transport.set_keepalive(keepalive_interval)
 
-                    self.connected = True
             except (NoValidConnectionsError, OSError, socket.timeout):
                 raise SSHConnectionError(f"Failed to connect to {self.ip}:{self.port}")
 
     def disconnect(self) -> None:
         if self.connected:
             self.sshclient.close()
-            self.connected = False
+
+    @property
+    def connected(self):
+        transport = self.sshclient.get_transport()
+        if transport is not None:
+            return transport.is_active()
+        else:
+            return False
 
     def __del__(self) -> None:
         if self.connected:
