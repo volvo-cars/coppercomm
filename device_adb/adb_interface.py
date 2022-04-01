@@ -230,7 +230,7 @@ class Adb:
     def device_id(self):
         return self._adb_device_id
 
-    def mount_filessytem_as_root(self):
+    def mount_filesytem_as_root(self):
         self.gain_root_permissions()
         self.shell(command="disable-verity", assert_ok=False)
         out = self.shell(command="remount", assert_ok=False).strip()

@@ -47,7 +47,7 @@ def qnx_serial(device_factory: DeviceFactory) -> SerialConnection:
 
 
 @pytest.fixture(scope="session")
-def hkp_serial(device_factory: DeviceFactory) -> SerialConnection:
+def support_cpu_serial(device_factory: DeviceFactory) -> SerialConnection:
     return device_factory.create_serial(SerialDeviceType.SupportCPU)
 
 
