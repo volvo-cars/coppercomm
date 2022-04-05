@@ -43,7 +43,9 @@ class SerialConnectionMapping(Mapping):
                 f"Invalid serial device: {ke}. Available devices: {list(self.keys())}"
             ) from None
 
-    def __setitem__(self, serial_device_type: SerialDeviceType, serial_connection: SerialConnection) -> None:
+    def __setitem__(
+        self, serial_device_type: SerialDeviceType, serial_connection: SerialConnection
+    ) -> None:
         self._devices[serial_device_type] = serial_connection
 
     def __iter__(self) -> typing.Iterator[SerialDeviceType]:

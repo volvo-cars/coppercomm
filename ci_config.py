@@ -8,8 +8,10 @@ from typing import Dict, List, Union
 CONFIGFILE_ENV_NAME = "DEVICE_CONFIG_FILE"
 DEFAULT_CONFIG_FILENAME = "device_config.json"
 
+
 class ConfigFileParseError(Exception):
     pass
+
 
 class SerialDeviceType(Enum):
     QNX = "QNX"
@@ -42,7 +44,9 @@ class Config:
         # override self.directory/self.filename if env variable set
         filepath_from_env = os.getenv(CONFIGFILE_ENV_NAME)
         if filepath_from_env:
-            filepath_from_env = os.path.expanduser(os.path.expandvars(filepath_from_env))
+            filepath_from_env = os.path.expanduser(
+                os.path.expandvars(filepath_from_env)
+            )
             if os.path.isdir(filepath_from_env):
                 self.directory = filepath_from_env
                 self.filename = DEFAULT_CONFIG_FILENAME
@@ -67,7 +71,9 @@ class Config:
     def get_serial_device_path(self, serial_device: SerialDeviceType) -> str:
         return self.device_config_data[serial_device.value]["tty"]
 
-    def get_serial_prompt(self, serial_device: SerialDeviceType) -> Union[str, List[str]]:
+    def get_serial_prompt(
+        self, serial_device: SerialDeviceType
+    ) -> Union[str, List[str]]:
         return ""
 
     def get_adb_device_id(self) -> str:

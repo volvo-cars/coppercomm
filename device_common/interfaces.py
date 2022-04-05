@@ -11,6 +11,7 @@ from device_serial.serial_console_interface import SerialConsoleInterface
 Expectation = typing.Union[str, ExceptionPexpect]
 Expectations = typing.Union[Expectation, typing.List[Expectation]]
 
+
 class ConsoleInterface(object):
     """
     This is a wrapper for different serial communication classes that ensures a common interface

@@ -28,7 +28,10 @@ class SerialConsoleInterface(threading.Thread):
     PROMPT_ONLY = -2
 
     def __init__(
-        self, connection_address: str, connection_name: str, prompt: Union[str, List[str], None] = None
+        self,
+        connection_address: str,
+        connection_name: str,
+        prompt: Union[str, List[str], None] = None,
     ) -> None:
         super().__init__()
         self.connection_name = connection_name
@@ -68,7 +71,9 @@ class SerialConsoleInterface(threading.Thread):
         finally:
             try:
                 self._lock.release()
-                self.logger.debug("Lock released succesfully while exiting from main loop")
+                self.logger.debug(
+                    "Lock released succesfully while exiting from main loop"
+                )
             except RuntimeError:
                 self.logger.debug("Lock already released")
             self._streaming.clear()
@@ -82,14 +87,22 @@ class SerialConsoleInterface(threading.Thread):
         self.logger.debug("Console closed")
 
     def expect(
-        self, expected: Union[str, List[str]], not_expected: Union[str, List[str], None] = None, timeout: float = 0
+        self,
+        expected: Union[str, List[str]],
+        not_expected: Union[str, List[str], None] = None,
+        timeout: float = 0,
     ) -> int:
         if not_expected is None:
             not_expected = []
         self._streaming.clear()
         self._lock.acquire()
         try:
-            found = self._expect(expected, not_expected=not_expected, timeout=timeout, wait_for_prompt=False)
+            found = self._expect(
+                expected,
+                not_expected=not_expected,
+                timeout=timeout,
+                wait_for_prompt=False,
+            )
         finally:
             self._streaming.set()
             self._lock.release()
@@ -169,7 +182,11 @@ class SerialConsoleInterface(threading.Thread):
             returncode = -1
 
         if returncode == 1:
-            self.logger.debug("Address {} is not used in current environment".format(connection_address))
+            self.logger.debug(
+                "Address {} is not used in current environment".format(
+                    connection_address
+                )
+            )
             return
         elif returncode != 0:
             self.logger.warning(
@@ -180,7 +197,8 @@ class SerialConsoleInterface(threading.Thread):
             return
         self._raise_exception(
             "Connection address {} is used by process with PID: {}".format(
-                connection_address, result.stdout.decode(sys.getdefaultencoding()).replace("\n", "")
+                connection_address,
+                result.stdout.decode(sys.getdefaultencoding()).replace("\n", ""),
             ),
             exception_cls=SerialConnectionError,
             log_level=logging.ERROR,
@@ -192,12 +210,19 @@ class SerialConsoleInterface(threading.Thread):
             self.serial_connection = serial.Serial(connection_address, 115200)
             connection_address = self.serial_connection.fileno()
             self.connection = fdspawn(
-                connection_address, use_poll=True, encoding=ENCODING, codec_errors=ENCODING_ERR_HANDLING
+                connection_address,
+                use_poll=True,
+                encoding=ENCODING,
+                codec_errors=ENCODING_ERR_HANDLING,
             )
         except TypeError as e:
             self.logger.debug("Exception while setting up connection: {}".format(e))
             self.logger.info("Skipping 'use_poll'")
-            self.connection = fdspawn(connection_address, encoding=ENCODING, codec_errors=ENCODING_ERR_HANDLING)
+            self.connection = fdspawn(
+                connection_address,
+                encoding=ENCODING,
+                codec_errors=ENCODING_ERR_HANDLING,
+            )
         except serial.SerialException as exc:  # device may be unavailable even if the device-path exists
             self.logger.error("Failed to setup serial connection: {}".format(exc))
             raise
@@ -222,12 +247,18 @@ class SerialConsoleInterface(threading.Thread):
             line = str(self.connection.before)
         except EOF:
             self.logger.error(
-                "EOF occurred - connection with {} lost or occupied by other source".format(self.connection_name)
+                "EOF occurred - connection with {} lost or occupied by other source".format(
+                    self.connection_name
+                )
             )
-            self._raise_exception("EOF occurred - connection lost", SerialConnectionError)
+            self._raise_exception(
+                "EOF occurred - connection lost", SerialConnectionError
+            )
         return line
 
-    def _send_command(self, command: str, max_retypes: int = 2, check_echo: bool = True) -> None:
+    def _send_command(
+        self, command: str, max_retypes: int = 2, check_echo: bool = True
+    ) -> None:
         self.logger.debug("Sending command <{}>".format(command))
         if check_echo:
             while max_retypes > 0:
@@ -237,7 +268,10 @@ class SerialConsoleInterface(threading.Thread):
                     if re.search(re.escape(command), self._get_line()):
                         return
                 max_retypes -= 1
-            self._raise_exception("Echo of command <{}> not found".format(command), CopperCommConnectionError)
+            self._raise_exception(
+                "Echo of command <{}> not found".format(command),
+                CopperCommConnectionError,
+            )
         else:
             self.connection.sendline(command)
 
@@ -254,8 +288,14 @@ class SerialConsoleInterface(threading.Thread):
                 expected_in_output, not_expected, wait_for_prompt, timeout
             )
         )
-        expected = expected_in_output if isinstance(expected_in_output, list) else [expected_in_output]
-        not_expected = not_expected if isinstance(not_expected, list) else [not_expected]
+        expected = (
+            expected_in_output
+            if isinstance(expected_in_output, list)
+            else [expected_in_output]
+        )
+        not_expected = (
+            not_expected if isinstance(not_expected, list) else [not_expected]
+        )
         expected = self._compile_pattern_list(expected)
         not_expected = self._compile_pattern_list(not_expected)
         if not (expected or not_expected or wait_for_prompt):
@@ -268,9 +308,13 @@ class SerialConsoleInterface(threading.Thread):
             expected_prompt_regex = self._prompt_regex
         else:
             if wait_for_prompt:
-                raise ValueError("Prompt not provieded while wait_for_prompt is enabled")
+                raise ValueError(
+                    "Prompt not provieded while wait_for_prompt is enabled"
+                )
             expected_prompt_regex = ""
-        self.logger.debug("Expecting prompt with regex <{}>".format(expected_prompt_regex))
+        self.logger.debug(
+            "Expecting prompt with regex <{}>".format(expected_prompt_regex)
+        )
         prompt_found = False if wait_for_prompt else True
         expected_found = None
         self._matched = ""
@@ -282,22 +326,35 @@ class SerialConsoleInterface(threading.Thread):
             for not_expected_el in not_expected:
                 if not_expected_el is not TIMEOUT:
                     if re.search(not_expected_el, line):
-                        self._raise_exception("Unexpected <{}> found!".format(not_expected_el))
+                        self._raise_exception(
+                            "Unexpected <{}> found!".format(not_expected_el)
+                        )
             for idx, expected_item in enumerate(expected):
                 if expected_item is not TIMEOUT:
                     matched = re.search(expected_item, line)
                     if matched and not self._matched:
                         expected_found = idx
                         self._matched = matched.group(0)
-            if prompt_found and not (expected_found is None and (expected or not_expected)):
+            if prompt_found and not (
+                expected_found is None and (expected or not_expected)
+            ):
                 self.logger.debug(
-                    "Expected <{}> found!".format(expected[expected_found] if isinstance(expected_found, int) else None)
+                    "Expected <{}> found!".format(
+                        expected[expected_found]
+                        if isinstance(expected_found, int)
+                        else None
+                    )
                 )
-                return expected_found if isinstance(expected_found, int) else self.PROMPT_ONLY
+                return (
+                    expected_found
+                    if isinstance(expected_found, int)
+                    else self.PROMPT_ONLY
+                )
             if timeout > 0 and datetime.now() > end_time:
                 if wait_for_prompt and not prompt_found:
                     self._raise_exception(
-                        "Prompt <{}> not found".format(expected_prompt_regex), CopperCommConnectionError
+                        "Prompt <{}> not found".format(expected_prompt_regex),
+                        CopperCommConnectionError,
                     )
                 if not expected:
                     self.logger.debug("Not expected <{}> have not occurred")
@@ -315,7 +372,9 @@ class SerialConsoleInterface(threading.Thread):
         else:
             return "|".join([x if x.startswith("\\") else re.escape(x) for x in prompt])
 
-    def _compile_pattern_list(self, patterns: List[Union[Pattern, TIMEOUT, str]]) -> List[Union[Pattern, TIMEOUT]]:
+    def _compile_pattern_list(
+        self, patterns: List[Union[Pattern, TIMEOUT, str]]
+    ) -> List[Union[Pattern, TIMEOUT]]:
         compiled_pattern_list = []
         for pattern in patterns:
             if isinstance(pattern, str):
@@ -323,7 +382,9 @@ class SerialConsoleInterface(threading.Thread):
             elif isinstance(pattern, type(re.compile(""))) or pattern is TIMEOUT:
                 compiled_pattern_list.append(pattern)
             else:
-                self._raise_exception("{} is not allowed type for pattern!".format(type(pattern)))
+                self._raise_exception(
+                    "{} is not allowed type for pattern!".format(type(pattern))
+                )
         return compiled_pattern_list
 
     def _raise_exception(
@@ -332,5 +393,7 @@ class SerialConsoleInterface(threading.Thread):
         exception_cls=AssertionError,
         log_level: int = logging.DEBUG,
     ) -> None:
-        self.logger.log(log_level, "SerialConsoleInterface Exception: {}".format(exception_message))
+        self.logger.log(
+            log_level, "SerialConsoleInterface Exception: {}".format(exception_message)
+        )
         raise exception_cls("[{}]: {}".format(self.connection_name, exception_message))

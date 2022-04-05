@@ -21,6 +21,7 @@ from device_adb.adb_interface import Adb
 from device_serial.device_serial import SerialConnection, SerialDeviceType
 from ssh_connection.ssh_connection import SSHConnection
 
+
 @pytest.fixture(scope="session")
 def device_factory() -> DeviceFactory:
     return DeviceFactory()

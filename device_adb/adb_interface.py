@@ -16,6 +16,7 @@ _logger.setLevel(logging.DEBUG)
 
 _kernel_boot_id_path = "/proc/sys/kernel/random/boot_id"
 
+
 class DeviceState(enum.Enum):
     ANY = "any"
     DEVICE = "device"
@@ -64,7 +65,9 @@ class Adb:
             command.insert(0, "shell")
 
         adb_command = self._adb_cmd + command
-        return execute_command(adb_command, assert_ok=assert_ok, regrep=regrep, timeout=timeout)
+        return execute_command(
+            adb_command, assert_ok=assert_ok, regrep=regrep, timeout=timeout
+        )
 
     def shell(
         self,
@@ -83,7 +86,9 @@ class Adb:
         :param timeout: Timeout for a command
         :returns: Command's output (stdout and stderr combined)
         """
-        return self.check_output(command, shell=True, assert_ok=assert_ok, regrep=regrep, timeout=timeout)
+        return self.check_output(
+            command, shell=True, assert_ok=assert_ok, regrep=regrep, timeout=timeout
+        )
 
     def gain_root_permissions(self, *, timeout: float = 60.0, retries: int = 3) -> None:
         """
@@ -108,7 +113,11 @@ class Adb:
                 # time needed for 'root' cmd vary and hard to say if 10s is enough so 20s is set to be sure
                 self.check_output("root", shell=False, assert_ok=True, timeout=20)
             except AssertionError as exc:
-                self._log("Gaining root permissions attempt {} failed: {}".format(attempt, exc))
+                self._log(
+                    "Gaining root permissions attempt {} failed: {}".format(
+                        attempt, exc
+                    )
+                )
                 time.sleep(3)
                 last_exc = exc
             else:
@@ -124,7 +133,9 @@ class Adb:
 
         :returns: Current DeviceState (DeviceState.DEVICE/DeviceState.RECOVERY)
         """
-        current_state = self.check_output("get-state", shell=False, assert_ok=True, timeout=3)
+        current_state = self.check_output(
+            "get-state", shell=False, assert_ok=True, timeout=3
+        )
         return DeviceState(current_state.strip())
 
     def wait_for_state(
@@ -172,7 +183,9 @@ class Adb:
             self.check_output("mkdir -p {}".format(on_device_path), shell=True)
         for to_push_element in to_push_list:
             self._log("Pushing {} to {}".format(to_push_element, on_device_path))
-            self.check_output("push {} {}".format(to_push_element, on_device_path), timeout=timeout)
+            self.check_output(
+                "push {} {}".format(to_push_element, on_device_path), timeout=timeout
+            )
 
         if sync:
             self.shell("sync", timeout=60)

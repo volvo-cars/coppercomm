@@ -17,7 +17,11 @@ def resolve_path(path: str) -> str:
     path = os.path.expanduser(os.path.expandvars(path))
     candidates = glob.glob(path)
     if len(candidates) != 1:
-        raise RuntimeError("Path {} expanded to {} candidates when exactly 1 expected!".format(path, len(candidates)))
+        raise RuntimeError(
+            "Path {} expanded to {} candidates when exactly 1 expected!".format(
+                path, len(candidates)
+            )
+        )
     return candidates[0]
 
 
@@ -63,20 +67,32 @@ def execute_command(
         if e.output:
             cmd_output = e.stdout.decode(sys.getdefaultencoding(), errors="replace")
 
-        _logger.debug("Cmd {} timeouted, captured output:\n{}".format(command, cmd_output))
-        raise TimeoutExpiredError("Timeout {}s for {} exceeded".format(timeout, command))
+        _logger.debug(
+            "Cmd {} timeouted, captured output:\n{}".format(command, cmd_output)
+        )
+        raise TimeoutExpiredError(
+            "Timeout {}s for {} exceeded".format(timeout, command)
+        )
 
     if completed_process.stdout:
-        cmd_output = completed_process.stdout.decode(sys.getdefaultencoding(), errors="replace")
+        cmd_output = completed_process.stdout.decode(
+            sys.getdefaultencoding(), errors="replace"
+        )
 
     if regrep:
         cmd_output_lines = cmd_output.splitlines()
-        cmd_output_lines = [line for line in cmd_output_lines if re.search(regrep, line)]
+        cmd_output_lines = [
+            line for line in cmd_output_lines if re.search(regrep, line)
+        ]
         cmd_output = "\n".join(cmd_output_lines)
 
     _logger.debug("Output of {}:\n{}".format(command, cmd_output))
     if assert_ok and completed_process.returncode != 0:
-        raise CommandFailedError("Cmd {} failed with returncode {}".format(command, completed_process.returncode))
+        raise CommandFailedError(
+            "Cmd {} failed with returncode {}".format(
+                command, completed_process.returncode
+            )
+        )
 
     if pattern is None:
         return cmd_output

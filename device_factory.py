@@ -11,7 +11,9 @@ _logger = logging.getLogger(__name__)
 
 class DeviceResourceUnavailableError(AssertionError):
     def __init__(self, resource: str):
-        super().__init__(f"{resource} not available. Is the device type correct in configuration file?")
+        super().__init__(
+            f"{resource} not available. Is the device type correct in configuration file?"
+        )
 
 
 class DeviceFactory:
@@ -39,7 +41,9 @@ class DeviceFactory:
 
         return SSHConnection(self.config.get_qnx_ip())
 
-    def create_serial_devices(self) -> typing.Mapping[SerialDeviceType, SerialConnection]:
+    def create_serial_devices(
+        self,
+    ) -> typing.Mapping[SerialDeviceType, SerialConnection]:
         return {t: SerialConnection(self.config, t) for t in self.available_serials()}
 
     def create_serial(self, serial_device_type: SerialDeviceType) -> SerialConnection:

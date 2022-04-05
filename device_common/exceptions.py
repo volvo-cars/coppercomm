@@ -13,12 +13,14 @@ class CommandFailedError(CommandExecutionError):
 class PatternNotFoundError(CommandExecutionError):
     pass
 
+
 class CopperCommmError(AssertionError):
     pass
 
 
 class RemountError(Exception):
     """Unable to mount the filesystem"""
+
 
 class CopperCommConnectionError(CopperCommmError):
     def __init__(self, message="Unknown error"):

@@ -14,7 +14,13 @@ logger = logging.getLogger("SSHConnection")
 
 
 class SSHCommandFailed(SSHException):
-    def __init__(self, exit_code: int, stdout: ChannelFile, stderr: ChannelStderrFile, cmd: str = ""):
+    def __init__(
+        self,
+        exit_code: int,
+        stdout: ChannelFile,
+        stderr: ChannelStderrFile,
+        cmd: str = "",
+    ):
         self.exit_code = exit_code
         self.stdout = stdout
         self.stderr = stderr
@@ -52,7 +58,9 @@ class IgnoreHostKeys(MissingHostKeyPolicy):
 class SSHConnection:
     _ssh_mutex = threading.Lock()
 
-    def __init__(self, ip: str, port: str = "22", username: str = "root", password: str = "") -> None:
+    def __init__(
+        self, ip: str, port: str = "22", username: str = "root", password: str = ""
+    ) -> None:
         with SSHConnection._ssh_mutex:
             self.sshclient = SSHClient()
             self.ip = ip
@@ -61,7 +69,11 @@ class SSHConnection:
             self.password = password
             self.sshclient.set_missing_host_key_policy(IgnoreHostKeys())
 
-    def connect(self, timeout: typing.Optional[int] = None, keepalive_interval: typing.Optional[int] = 5) -> None:
+    def connect(
+        self,
+        timeout: typing.Optional[int] = None,
+        keepalive_interval: typing.Optional[int] = 5,
+    ) -> None:
         if not self.connected:
             try:
                 with SSHConnection._ssh_mutex:
@@ -95,7 +107,9 @@ class SSHConnection:
         if self.connected:
             self.sshclient.close()
 
-    def _is_exit_status_ready(self, channel: Channel, timeout: typing.Optional[int] = 5) -> bool:
+    def _is_exit_status_ready(
+        self, channel: Channel, timeout: typing.Optional[int] = 5
+    ) -> bool:
         if timeout is None:
             return False
         start_time = time.monotonic()
@@ -106,11 +120,15 @@ class SSHConnection:
         return False
 
     def _create_and_setup_channel(
-        self, command_exec_timeout: typing.Optional[int] = 10, open_channel_timeout: int = 10
+        self,
+        command_exec_timeout: typing.Optional[int] = 10,
+        open_channel_timeout: int = 10,
     ) -> typing.Tuple[Channel, ChannelFile, ChannelStderrFile]:
         with SSHConnection._ssh_mutex:
             # Channels are used directly because there is no possibility set "open channel timeout" which is 3600s by default
-            channel = self.sshclient.get_transport().open_channel(kind="session", timeout=open_channel_timeout)
+            channel = self.sshclient.get_transport().open_channel(
+                kind="session", timeout=open_channel_timeout
+            )
             channel.settimeout(command_exec_timeout)
             stdout = channel.makefile()
             stderr = channel.makefile_stderr()
@@ -126,11 +144,14 @@ class SSHConnection:
 
         try:
             (channel, stdout, stderr) = self._create_and_setup_channel(
-                command_exec_timeout=command_exec_timeout, open_channel_timeout=open_channel_timeout
+                command_exec_timeout=command_exec_timeout,
+                open_channel_timeout=open_channel_timeout,
             )
             channel.exec_command(command=command)
         except (NoValidConnectionsError, OSError, socket.timeout, EOFError):
-            raise SSHConnectionError(f"Failed to open channel or execute command: '{command}'")
+            raise SSHConnectionError(
+                f"Failed to open channel or execute command: '{command}'"
+            )
 
         if self._is_exit_status_ready(channel=channel, timeout=command_exec_timeout):
             exitcode = channel.recv_exit_status()
@@ -149,7 +170,11 @@ class SSHConnection:
         command_exec_timeout: typing.Optional[int] = 10,
         tries=1,
         open_channel_timeout: int = 10,
-    ) -> typing.Tuple[typing.Optional[ChannelFile], typing.Optional[ChannelStderrFile], typing.Optional[int]]:
+    ) -> typing.Tuple[
+        typing.Optional[ChannelFile],
+        typing.Optional[ChannelStderrFile],
+        typing.Optional[int],
+    ]:
         assert tries >= 1
         for tries_left in reversed(range(tries)):
             try:

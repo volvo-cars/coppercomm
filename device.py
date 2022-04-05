@@ -54,9 +54,13 @@ class Device:
             yield device
 
 
-def _create_ssh_connections(device_factory: DeviceFactory, adb: Adb) -> typing.Mapping[str, SSHConnection]:
+def _create_ssh_connections(
+    device_factory: DeviceFactory, adb: Adb
+) -> typing.Mapping[str, SSHConnection]:
     class _LazyDict(typing.Mapping[str, SSHConnection]):
-        def __init__(self, loaders: typing.Mapping[str, typing.Callable[[], SSHConnection]]):
+        def __init__(
+            self, loaders: typing.Mapping[str, typing.Callable[[], SSHConnection]]
+        ):
             self._cached: typing.Dict[str, SSHConnection] = dict()
             self._loaders = loaders
 

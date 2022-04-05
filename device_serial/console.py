@@ -6,10 +6,15 @@ from device_serial.serial_console_interface import SerialConsoleInterface
 
 class Console(ConsoleInterface):
     def __init__(
-        self, connection_address: str, prompt: typing.Union[str, typing.List[str]], connection_name: str
+        self,
+        connection_address: str,
+        prompt: typing.Union[str, typing.List[str]],
+        connection_name: str,
     ) -> None:
         console_object = SerialConsoleInterface(
-            connection_address=connection_address, connection_name=connection_name, prompt=prompt
+            connection_address=connection_address,
+            connection_name=connection_name,
+            prompt=prompt,
         )
         super().__init__(console_object)
 
@@ -22,7 +27,11 @@ class Console(ConsoleInterface):
         prompt: typing.Union[str, typing.List[str]] = None,
     ) -> None:
         self.console_object.send_command(
-            command, check_echo=check_echo, wait_for_prompt=wait_for_prompt, timeout=timeout, prompt=prompt
+            command,
+            check_echo=check_echo,
+            wait_for_prompt=wait_for_prompt,
+            timeout=timeout,
+            prompt=prompt,
         )
 
     def send_line_and_expect(
