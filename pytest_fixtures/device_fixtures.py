@@ -12,12 +12,13 @@ def test_ping_android_dev_interface(qnx_serial_device):
     pass
 """
 import pytest
-import typing
 
 from coppercomm.device_factory import DeviceFactory
+from coppercomm.device import Device
 from coppercomm.ci_config import Config
 from coppercomm.device_adb.adb_interface import Adb
 from coppercomm.device_serial.device_serial import SerialConnection, SerialDeviceType
+from coppercomm.device_state_monitor.adb_state_monitor import AdbStateMonitor
 from coppercomm.ssh_connection.ssh_connection import SSHConnection
 
 
@@ -40,6 +41,14 @@ def qnx_ssh_over_adb(device_factory: DeviceFactory, adb: Adb) -> SSHConnection:
 def qnx_broadrreach_ssh(device_factory: DeviceFactory) -> SSHConnection:
     return device_factory.create_broadrreach_ssh()
 
+
+@pytest.fixture(scope="session")
+def adb_connection_state_monitor(adb: Adb):
+    connection_monitor = AdbStateMonitor(adb)
+    yield
+    connection_monitor.stop()
+
+
 @pytest.fixture(scope="session")
 def qnx_serial(device_factory: DeviceFactory) -> SerialConnection:
     return device_factory.create_serial(SerialDeviceType.QNX)
@@ -49,9 +58,11 @@ def qnx_serial(device_factory: DeviceFactory) -> SerialConnection:
 def support_cpu_serial(device_factory: DeviceFactory) -> SerialConnection:
     return device_factory.create_serial(SerialDeviceType.SupportCPU)
 
+
 @pytest.fixture(scope="session")
 def hkp_serial(device_factory: DeviceFactory) -> SerialConnection:
     return device_factory.create_serial(SerialDeviceType.HKP)
+
 
 @pytest.fixture(scope="function")
 def device_config(device_factory: DeviceFactory) -> Config:
