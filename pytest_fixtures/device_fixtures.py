@@ -41,7 +41,6 @@ def qnx_ssh_over_adb(device_factory: DeviceFactory, adb: Adb) -> SSHConnection:
 def qnx_broadrreach_ssh(device_factory: DeviceFactory) -> SSHConnection:
     return device_factory.create_broadrreach_ssh()
 
-
 @pytest.fixture(scope="session")
 def qnx_serial(device_factory: DeviceFactory) -> SerialConnection:
     return device_factory.create_serial(SerialDeviceType.QNX)
@@ -51,23 +50,10 @@ def qnx_serial(device_factory: DeviceFactory) -> SerialConnection:
 def support_cpu_serial(device_factory: DeviceFactory) -> SerialConnection:
     return device_factory.create_serial(SerialDeviceType.SupportCPU)
 
+@pytest.fixture(scope="session")
+def hkp_serial(device_factory: DeviceFactory) -> SerialConnection:
+    return device_factory.create_serial(SerialDeviceType.HKP)
 
 @pytest.fixture(scope="function")
 def device_config(device_factory: DeviceFactory) -> Config:
     return device_factory.config
-
-
-@pytest.fixture
-def test_device(
-    device_factory: DeviceFactory,
-    adb: Adb,
-    support_cpu_serial: SerialConnection,
-    qnx_serial: SerialConnection,
-    qnx_broadrreach_ssh: SSHConnection,
-) -> Device:
-    ssh = {"broadrreach": qnx_broadrreach_ssh}
-    serial = {
-        SerialDeviceType.QNX: qnx_serial,
-        SerialDeviceType.SupportCPU: support_cpu_serial,
-    }
-    return Device(config=device_factory.config, adb=adb, ssh=ssh, serial_devices=serial)

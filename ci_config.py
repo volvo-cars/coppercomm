@@ -16,6 +16,7 @@ class ConfigFileParseError(Exception):
 class SerialDeviceType(Enum):
     QNX = "QNX"
     SupportCPU = "SupportCPU"
+    HKP = "HKP"
 
 
 @dataclass

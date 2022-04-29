@@ -24,21 +24,15 @@ class DeviceFactory:
         return Adb(self.config.get_adb_device_id())
 
     def create_ssh_over_adb(self, adb: Adb) -> SSHConnection:
-        if self.config.get_device_name() == "device1":
-            # try to wait a bit for adb in case unit was just rebooted
-            adb.wait_for_state(timeout=10)
-            # forward port to host, android have ssh tunnel to qnx.
-            # localhost <--> android <--> qnx:
-            local_ssh_port = self.config.get_host_adb_sshport()
-            adb.check_output(f"forward tcp:{local_ssh_port} tcp:22")
-            return SSHConnection(ip="127.0.0.1", port=local_ssh_port)
-        else:
-            raise DeviceResourceUnavailableError("SSH over ADB")
+        # try to wait a bit for adb in case unit was just rebooted
+        adb.wait_for_state(timeout=10)
+        # forward port to host, android have ssh tunnel to qnx.
+        # localhost <--> android <--> qnx:
+        local_ssh_port = self.config.get_host_adb_sshport()
+        adb.check_output(f"forward tcp:{local_ssh_port} tcp:22")
+        return SSHConnection(ip="127.0.0.1", port=local_ssh_port)
 
     def create_broadrreach_ssh(self) -> SSHConnection:
-        if self.config.get_device_name() != "device1":
-            raise DeviceResourceUnavailableError("Broadrreach SSH")
-
         return SSHConnection(self.config.get_qnx_ip())
 
     def create_serial_devices(
@@ -55,5 +49,6 @@ class DeviceFactory:
     def available_serials(self) -> typing.Sequence[SerialDeviceType]:
         serials = {
             "device1": (SerialDeviceType.SupportCPU, SerialDeviceType.QNX),
+            "DHU": (SerialDeviceType.HKP, SerialDeviceType.QNX),
         }
         return serials[self.config.get_device_name()]
