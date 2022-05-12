@@ -1,9 +1,9 @@
 import tempfile
 from unittest import mock
 from unittest.mock import call
-from device_adb import adb_interface
-from device_adb.adb_interface import DeviceState
-from device_common.exceptions import RemountError
+from coppercomm.device_adb import adb_interface
+from coppercomm.device_adb.adb_interface import DeviceState
+from coppercomm.device_common.exceptions import RemountError
 
 test_adb_id = "xyz"
 

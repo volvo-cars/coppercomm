@@ -7,8 +7,8 @@ import time
 import typing
 import datetime
 
-from device_common.exceptions import RemountError
-from device_common.local_console import CommandFailedError, execute_command
+from coppercomm.device_common.exceptions import RemountError
+from coppercomm.device_common.local_console import CommandFailedError, execute_command
 
 
 _logger = logging.getLogger("adb_interface")

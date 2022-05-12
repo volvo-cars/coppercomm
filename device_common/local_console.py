@@ -7,7 +7,7 @@ import subprocess
 import sys
 import typing
 
-from .exceptions import CommandFailedError, TimeoutExpiredError, PatternNotFoundError
+from coppercomm.device_common.exceptions import CommandFailedError, TimeoutExpiredError, PatternNotFoundError
 
 
 _logger = logging.getLogger("local_console")

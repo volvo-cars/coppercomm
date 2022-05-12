@@ -5,11 +5,11 @@ import typing
 from contextlib import ExitStack
 from dataclasses import dataclass
 
-from ci_config import Config, SerialDeviceType
-from device_adb.adb_interface import Adb
-from device_factory import DeviceFactory
-from device_serial.device_serial import SerialConnection
-from ssh_connection.ssh_connection import SSHConnection
+from coppercomm.ci_config import Config, SerialDeviceType
+from coppercomm.device_adb.adb_interface import Adb
+from coppercomm.device_factory import DeviceFactory
+from coppercomm.device_serial.device_serial import SerialConnection
+from coppercomm.ssh_connection.ssh_connection import SSHConnection
 
 _logger = logging.getLogger("device")
 

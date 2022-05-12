@@ -12,7 +12,7 @@ import sys
 import re
 import os
 
-from device_common.exceptions import CopperCommConnectionError
+from coppercomm.device_common.exceptions import CopperCommConnectionError
 
 
 ENCODING = "ascii"

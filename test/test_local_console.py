@@ -1,7 +1,7 @@
 import tempfile
 from unittest import mock
-import device_common.exceptions as exceptions
-import device_common.local_console as local_console
+import coppercomm.device_common.exceptions as exceptions
+import coppercomm.device_common.local_console as local_console
 import subprocess
 
 

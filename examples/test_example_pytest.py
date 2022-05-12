@@ -1,7 +1,7 @@
 import pytest
 
-from ci_config import SerialDeviceType
-from device import Device
+from coppercomm.ci_config import SerialDeviceType
+from coppercomm.device import Device
 
 pytest_plugins = "pytest_fixtures.device_fixtures"
 

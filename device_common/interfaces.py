@@ -5,7 +5,7 @@ from abc import ABCMeta, abstractmethod
 from time import sleep
 from pexpect import ExceptionPexpect
 
-from device_serial.serial_console_interface import SerialConsoleInterface
+from coppercomm.device_serial.serial_console_interface import SerialConsoleInterface
 
 
 Expectation = typing.Union[str, ExceptionPexpect]

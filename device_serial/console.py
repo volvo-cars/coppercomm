@@ -1,7 +1,7 @@
 import typing
 
-from device_common.interfaces import ConsoleInterface, Expectations
-from device_serial.serial_console_interface import SerialConsoleInterface
+from coppercomm.device_common.interfaces import ConsoleInterface, Expectations
+from coppercomm.device_serial.serial_console_interface import SerialConsoleInterface
 
 
 class Console(ConsoleInterface):
