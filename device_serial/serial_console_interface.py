@@ -118,6 +118,7 @@ class SerialConsoleInterface(threading.Thread):
         timeout: float = 0,
         wait_for_prompt: bool = True,
         prompt: Union[str, List[str], None] = None,
+        send_linebreak: bool = True,
     ) -> int:
         """
         Method that sends a command on the console and may expect a pattern or list of patterns
@@ -140,7 +141,7 @@ class SerialConsoleInterface(threading.Thread):
         self._streaming.clear()
         self._lock.acquire()
         try:
-            self._send_command(command, max_retypes, check_echo)
+            self._send_command(command, max_retypes, check_echo, send_linebreak)
             if expected_in_output or not_expected or wait_for_prompt:
                 found = self._expect(
                     expected_in_output=expected_in_output,
@@ -257,12 +258,16 @@ class SerialConsoleInterface(threading.Thread):
         return line
 
     def _send_command(
-        self, command: str, max_retypes: int = 2, check_echo: bool = True
+        self, command: str, max_retypes: int = 2, check_echo: bool = True, send_linebreak: bool = True,
+
     ) -> None:
         self.logger.debug("Sending command <{}>".format(command))
         if check_echo:
             while max_retypes > 0:
-                self.connection.sendline(command)
+                if send_linebreak:
+                    self.connection.sendline(command)
+                else:
+                    self.connection.send(command)
                 end_time = datetime.now() + timedelta(seconds=2)
                 while datetime.now() < end_time:
                     if re.search(re.escape(command), self._get_line()):
@@ -273,7 +278,10 @@ class SerialConsoleInterface(threading.Thread):
                 CopperCommConnectionError,
             )
         else:
-            self.connection.sendline(command)
+            if send_linebreak:
+                self.connection.sendline(command)
+            else:
+                self.connection.send(command)
 
     def _expect(
         self,

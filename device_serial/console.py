@@ -25,6 +25,7 @@ class Console(ConsoleInterface):
         wait_for_prompt: bool = False,
         timeout: float = 1,
         prompt: typing.Union[str, typing.List[str]] = None,
+        send_linebreak: bool = True
     ) -> None:
         self.console_object.send_command(
             command,
@@ -32,6 +33,7 @@ class Console(ConsoleInterface):
             wait_for_prompt=wait_for_prompt,
             timeout=timeout,
             prompt=prompt,
+            send_linebreak=send_linebreak,
         )
 
     def send_line_and_expect(
@@ -42,6 +44,7 @@ class Console(ConsoleInterface):
         check_echo: bool = True,
         wait_for_prompt: bool = True,
         prompt: typing.Union[str, typing.List[str]] = None,
+        send_linebreak: bool = True
     ) -> int:
         return self.console_object.send_command(
             command,
@@ -50,6 +53,7 @@ class Console(ConsoleInterface):
             timeout=timeout,
             wait_for_prompt=wait_for_prompt,
             prompt=prompt,
+            send_linebreak=send_linebreak
         )
 
     def expect(self, pattern: Expectations, timeout: float) -> int:
