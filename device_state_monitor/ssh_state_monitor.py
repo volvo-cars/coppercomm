@@ -16,7 +16,6 @@ class SshStateMonitor:
         self.is_running = False
         self.interval = 2
         self.connection = qnx_broadrreach_ssh
-        self.callback_function = self.get_state
         _logger.info("Staring ssh state monitor.")
         self.connection.connect()
         self.start()
@@ -24,7 +23,12 @@ class SshStateMonitor:
     def _run(self):
         self.is_running = False
         self.start()
-        self.callback_function()
+        self._get_state()
+
+    def get_state(self):
+        if not self.connection.connected:
+            self.connection.connect()
+        return self.connection.connected
 
     def start(self):
         if not self.is_running:
@@ -37,6 +41,6 @@ class SshStateMonitor:
         self._timer.cancel()
         self.is_running = False
 
-    def get_state(self):
+    def _get_state(self):
         if not self.connection.connected:
             _logger.info("SSH sonnection state: {}".format(self.connection.connected))

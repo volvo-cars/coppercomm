@@ -11,6 +11,7 @@ pytest_plugins = "pytest_fixtures.device_fixtures"
 def test_ping_android_dev_interface(qnx_serial_device):
     pass
 """
+
 import pytest
 
 from coppercomm.device_factory import DeviceFactory
@@ -46,15 +47,34 @@ def qnx_broadrreach_ssh(device_factory: DeviceFactory) -> SSHConnection:
 @pytest.fixture(scope="session")
 def adb_connection_state_monitor(adb: Adb):
     connection_monitor = AdbStateMonitor(adb)
-    yield
+    yield connection_monitor
     connection_monitor.stop()
 
 
 @pytest.fixture(scope="session")
 def ssh_connection_state_monitor(qnx_broadrreach_ssh):
     connection_monitor = SshStateMonitor(qnx_broadrreach_ssh=qnx_broadrreach_ssh)
-    yield
+    yield connection_monitor
     connection_monitor.stop()
+
+
+@pytest.fixture(scope="function")
+def device_available(adb_connection_state_monitor, ssh_connection_state_monitor):
+    """
+    Check if device is up before the test. If not do not run test.
+    """
+    try:
+        ssh = ssh_connection_state_monitor.get_state()
+        adb = adb_connection_state_monitor.get_state()
+        if ssh is True and adb == "DEVICE":
+            yield
+        else:
+            pytest.fail(
+                "Device sanity check failed. Test won't run until device is up.\n SSH connection: {} // ADB "
+                "state: {}".format(ssh, adb)
+            )
+    except Exception:
+        pytest.fail("Monitors initialization failed!")
 
 
 @pytest.fixture(scope="session")

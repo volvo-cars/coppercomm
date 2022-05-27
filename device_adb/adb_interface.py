@@ -127,14 +127,14 @@ class Adb:
 
         raise CommandFailedError("Gaining root permissions failed") from last_exc
 
-    def get_state(self) -> DeviceState:
+    def get_state(self, assert_ok=True) -> DeviceState:
         """
         Get current device state
 
         :returns: Current DeviceState (DeviceState.DEVICE/DeviceState.RECOVERY)
         """
         current_state = self.check_output(
-            "get-state", shell=False, assert_ok=True, timeout=3
+            "get-state", shell=False, assert_ok=assert_ok, timeout=3
         )
         return DeviceState(current_state.strip())
 
