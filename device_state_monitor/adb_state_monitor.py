@@ -1,7 +1,7 @@
 import logging
 import threading
 
-from device_adb.adb_interface import DeviceState
+from coppercomm.device_adb.adb_interface import DeviceState
 
 _logger = logging.getLogger(__name__)
 
