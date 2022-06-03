@@ -25,7 +25,7 @@ from coppercomm.device_state_monitor.ssh_state_monitor import SshStateMonitor
 
 
 @pytest.fixture(scope="session")
-def device_factory() -> DeviceFactory:
+def device_factory(create_device_config) -> DeviceFactory:
     return DeviceFactory()
 
 
