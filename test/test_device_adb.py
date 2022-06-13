@@ -8,7 +8,7 @@ from coppercomm.device_common.exceptions import RemountError
 test_adb_id = "xyz"
 
 
-@mock.patch("device_adb.adb_interface.execute_command")
+@mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_check_output(mock_execute):
     mock_execute.return_value = "a.txt b.txt"
     result = adb_interface.Adb(adb_device_id=test_adb_id).check_output(command="ls -la")
@@ -21,7 +21,7 @@ def test_adb_check_output(mock_execute):
     assert "a.txt b.txt" == result
 
 
-@mock.patch("device_adb.adb_interface.execute_command")
+@mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_check_output_shell(mock_execute):
     mock_execute.return_value = None
     adb_interface.Adb(adb_device_id=test_adb_id).check_output(command="ls", shell=True)
@@ -33,7 +33,7 @@ def test_adb_check_output_shell(mock_execute):
     )
 
 
-@mock.patch("device_adb.adb_interface.execute_command")
+@mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_shell(mock_execute):
     mock_execute.return_value = None
     adb_interface.Adb(adb_device_id=test_adb_id).shell(command="ls")
@@ -45,7 +45,7 @@ def test_adb_shell(mock_execute):
     )
 
 
-@mock.patch("device_adb.adb_interface.execute_command")
+@mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_gain_root_permissions(mock_execute):
     mock_execute.return_value = None
 
@@ -71,7 +71,7 @@ def test_adb_gain_root_permissions(mock_execute):
     mock_execute.assert_has_calls(calls)
 
 
-@mock.patch("device_adb.adb_interface.execute_command")
+@mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_get_state(mock_execute):
     mock_execute.return_value = "device"
 
@@ -83,7 +83,7 @@ def test_adb_get_state(mock_execute):
     assert DeviceState.DEVICE == result
 
 
-@mock.patch("device_adb.adb_interface.execute_command")
+@mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_wait_for_state(mock_execute):
     mock_execute.return_value = None
     adb_interface.Adb(adb_device_id=test_adb_id).wait_for_state(
@@ -97,7 +97,7 @@ def test_adb_wait_for_state(mock_execute):
     )
 
 
-@mock.patch("device_adb.adb_interface.execute_command")
+@mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_push(mock_execute):
     mock_execute.return_value = None
 
@@ -132,7 +132,7 @@ def test_adb_push(mock_execute):
     mock_execute.assert_has_calls(calls)
 
 
-@mock.patch("device_adb.adb_interface.execute_command")
+@mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_push_no_files(mock_execute):
     mock_execute.return_value = None
 
@@ -151,7 +151,7 @@ def test_adb_push_no_files(mock_execute):
     mock_execute.assert_not_called()
 
 
-@mock.patch("device_adb.adb_interface.execute_command")
+@mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_pull(mock_execute):
     mock_execute.return_value = None
 
@@ -168,7 +168,7 @@ def test_adb_pull(mock_execute):
     )
 
 
-@mock.patch("device_adb.adb_interface.execute_command")
+@mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_get_boot_id(mock_execute):
     mock_execute.return_value = "123"
 
@@ -183,7 +183,7 @@ def test_adb_get_boot_id(mock_execute):
     assert "123" == result
 
 
-@mock.patch("device_adb.adb_interface.execute_command")
+@mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_trigger_reboot(mock_execute):
     mock_execute.return_value = None
     adb_interface.Adb(adb_device_id=test_adb_id).trigger_reboot()
@@ -195,7 +195,7 @@ def test_adb_trigger_reboot(mock_execute):
     )
 
 
-@mock.patch("device_adb.adb_interface.execute_command")
+@mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_reboot_and_wait(mock_execute):
     mock_execute.side_effect = ["123", None, None, None, None, "456"]
     adb_interface.Adb(adb_device_id=test_adb_id).reboot_and_wait()
@@ -253,7 +253,7 @@ def test_adb_reboot_and_wait(mock_execute):
     mock_execute.assert_has_calls(calls)
 
 
-@mock.patch("device_adb.adb_interface.execute_command")
+@mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_reboot_and_wait_unable_to_reboot(mock_execute):
     mock_execute.side_effect = ["123", None, None, None, None, "123"]
     try:
@@ -315,7 +315,7 @@ def test_adb_reboot_and_wait_unable_to_reboot(mock_execute):
     mock_execute.assert_has_calls(calls)
 
 
-@mock.patch("device_adb.adb_interface.execute_command")
+@mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_mount_filesytem_as_root(mock_execute):
     mock_execute.side_effect = [None, None, None, None, "remount succeeded "]
     adb_interface.Adb(adb_device_id=test_adb_id).mount_filesytem_as_root()
@@ -353,7 +353,7 @@ def test_adb_mount_filesytem_as_root(mock_execute):
     mock_execute.assert_has_calls(calls)
 
 
-@mock.patch("device_adb.adb_interface.execute_command")
+@mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_mount_filesytem_as_root_unable_to_remount(mock_execute):
     mock_execute.side_effect = [
         None,
