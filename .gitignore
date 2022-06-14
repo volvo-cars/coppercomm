@@ -1,3 +1,9 @@
 *.pyc
 *.pyo
+
 __pycache__/**
+# The below is needed to grey out the directories in Visual Studio
+**/__pycache__
+
+.idea/
+test_run_logs/

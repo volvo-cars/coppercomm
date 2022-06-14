@@ -1,7 +1,6 @@
 import contextlib
 import logging.config
 import typing
-
 from contextlib import ExitStack
 from dataclasses import dataclass
 
@@ -9,6 +8,8 @@ from coppercomm.ci_config import Config, SerialDeviceType
 from coppercomm.device_adb.adb_interface import Adb
 from coppercomm.device_factory import DeviceFactory
 from coppercomm.device_serial.device_serial import SerialConnection
+from coppercomm.loggers.device_logger import DeviceLoggerViaAdb
+from coppercomm.loggers.utils.log_dir import LogDir
 from coppercomm.ssh_connection.ssh_connection import SSHConnection
 
 _logger = logging.getLogger("device")
@@ -26,6 +27,7 @@ class Device:
     adb: Adb
     serial_devices: typing.Mapping[SerialDeviceType, SerialConnection]
     ssh: typing.Mapping[str, SSHConnection]
+    test_log_dir: LogDir
 
     @property
     def device_type(self):
@@ -35,6 +37,14 @@ class Device:
         _logger.info(f"The device type is: {self.config.get_device_name()}")
 
         return self.config.get_device_name()
+
+    def adb_logger(self, command: str, *, shell: bool = True) -> DeviceLoggerViaAdb:
+        return DeviceLoggerViaAdb(
+            self.config.get_adb_device_id(),
+            command,
+            test_log_dir=self.test_log_dir.name,
+            shell=shell,
+        )
 
     @staticmethod
     @contextlib.contextmanager
@@ -54,13 +64,9 @@ class Device:
             yield device
 
 
-def _create_ssh_connections(
-    device_factory: DeviceFactory, adb: Adb
-) -> typing.Mapping[str, SSHConnection]:
+def _create_ssh_connections(device_factory: DeviceFactory, adb: Adb) -> typing.Mapping[str, SSHConnection]:
     class _LazyDict(typing.Mapping[str, SSHConnection]):
-        def __init__(
-            self, loaders: typing.Mapping[str, typing.Callable[[], SSHConnection]]
-        ):
+        def __init__(self, loaders: typing.Mapping[str, typing.Callable[[], SSHConnection]]):
             self._cached: typing.Dict[str, SSHConnection] = dict()
             self._loaders = loaders
 

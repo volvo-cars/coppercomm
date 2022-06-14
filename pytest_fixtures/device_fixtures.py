@@ -14,14 +14,14 @@ def test_ping_android_dev_interface(qnx_serial_device):
 
 import pytest
 
-from coppercomm.device_factory import DeviceFactory
-from coppercomm.device import Device
 from coppercomm.ci_config import Config
+from coppercomm.device import Device
 from coppercomm.device_adb.adb_interface import Adb
+from coppercomm.device_factory import DeviceFactory
 from coppercomm.device_serial.device_serial import SerialConnection, SerialDeviceType
 from coppercomm.device_state_monitor.adb_state_monitor import AdbStateMonitor
-from coppercomm.ssh_connection.ssh_connection import SSHConnection
 from coppercomm.device_state_monitor.ssh_state_monitor import SshStateMonitor
+from coppercomm.ssh_connection.ssh_connection import SSHConnection
 
 
 @pytest.fixture(scope="session")
