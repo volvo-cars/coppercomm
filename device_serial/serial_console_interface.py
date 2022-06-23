@@ -28,17 +28,16 @@ class SerialConsoleInterface(threading.Thread):
     PROMPT_ONLY = -2
 
     def __init__(
-        self,
-        connection_address: str,
-        connection_name: str,
-        prompt: Union[str, List[str], None] = None,
+            self,
+            connection_address: str,
+            connection_name: str,
+            prompt: Union[str, List[str], None] = None,
     ) -> None:
         super().__init__()
         self.connection_name = connection_name
-        parent_logger = logging.getLogger("SerialConsole")
-        self.logger = parent_logger.getChild(self.connection_name)
+        self.parent_logger = logging.getLogger("SerialConsole")
+        self.logger = self.parent_logger.getChild(self.connection_name)
         self.logger.setLevel(logging.DEBUG)
-
         self._setup_connection(connection_address)
         self._lock = threading.RLock()
         self._running = threading.Event()
@@ -47,6 +46,21 @@ class SerialConsoleInterface(threading.Thread):
         self._streaming.set()
         self._matched = ""
         self.set_prompt(prompt)
+
+    def set_test_logging(self, path):
+        """
+        Function to modify logging path for serial during test session.
+        It swaps old handlers with the new one that has a specified path for current test case.
+        """
+        self.logger = logging.getLogger(__name__)
+        file_handler = logging.FileHandler(filename=path, mode="a", encoding=None, delay=False)
+        formatter = logging.Formatter('%(levelname)s - %(message)s')
+        file_handler.setFormatter(formatter)
+        file_handler.setLevel(logging.DEBUG)
+        for old_handler in self.logger.handlers:
+            self.logger.removeHandler(old_handler)
+        self.logger.addHandler(file_handler)
+        self.logger.propagate = False
 
     def set_prompt(self, prompt: Union[str, List[str], None]) -> None:
         self._prompt_regex = self._get_prompt_regex(prompt)

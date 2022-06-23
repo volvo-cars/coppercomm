@@ -30,6 +30,9 @@ class SerialConnection(Console):
         self.console_object.close_console()
         return False
 
+    def set_test_logging(self, path):
+        self.console_object.set_test_logging(path=path)
+
 
 class SerialConnectionMapping(Mapping):
     def __init__(self) -> None:
