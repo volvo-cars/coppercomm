@@ -154,6 +154,19 @@ class Adb:
         self.check_output("wait-for-{}".format(device_state.value), timeout=timeout)
         self._log("Device in {} state".format(device_state))
 
+    def wait_for_boot_complete(self, timeout: typing.Optional[int] = 120) -> None:
+        """Wait for android to completely boot up.
+
+        Waits for property: dev.bootcomplete == 1
+        """
+        monotonic_timeout = time.monotonic() + timeout
+
+        while time.monotonic() < monotonic_timeout:
+            if self.shell("getprop dev.bootcomplete").strip() == "1":
+                return
+            time.sleep(2)
+        raise Exception(f"Android property 'dev.bootcomplete' != 1 after {timeout}s!")
+
     def push(
         self,
         local_path: str,
@@ -216,17 +229,24 @@ class Adb:
         _logger.debug(f"Current boot_id: {boot_id}")
         return boot_id
 
-    def trigger_reboot(self):
-        _logger.info("Triggering reboot over adb")
-        self.shell("reboot")
+    def trigger_reboot(self, mode=None):
+        """Trigger adb shell reboot.
 
-    def reboot_and_wait(self, timeout=120):
+        :param mode: Allows to specify reboot mode e.g. recovery or fastboot
+        """
+        _logger.info("Triggering reboot over adb")
+        if mode:
+            self.shell(f"reboot {mode}")
+        else:
+            self.shell("reboot")
+
+    def reboot_and_wait(self, timeout=120, mode=None):
         initial_boot_id = self.get_boot_id()
 
         datetime_timeout = datetime.datetime.now() + datetime.timedelta(seconds=timeout)
 
         self.gain_root_permissions(timeout=10)
-        self.trigger_reboot()
+        self.trigger_reboot(mode)
 
         while datetime.datetime.now() < datetime_timeout:
             try:
@@ -255,3 +275,15 @@ class Adb:
 
             if out != "remount succeeded":
                 raise RemountError("Failed to mount filesystem as root: {}".format(out))
+
+    def perform_factory_reset(self):
+        """Perform factory reset by wiping data in recovery mode.
+
+        Wait for system restart and complete boot.
+        """
+        _logger.info("Performing factory reset through recovery..")
+        self.reboot_and_wait(mode="recovery")
+        self.gain_root_permissions()
+        self.shell("recovery --wipe_data")
+        self.wait_for_state(DeviceState.DEVICE)
+        self.wait_for_boot_complete()
