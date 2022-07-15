@@ -45,6 +45,7 @@ class SerialConsoleInterface(threading.Thread):
         self._streaming = threading.Event()
         self._streaming.set()
         self._matched = ""
+        self._output_lines = []
         self.set_prompt(prompt)
 
     def set_test_logging(self, path):
@@ -68,6 +69,12 @@ class SerialConsoleInterface(threading.Thread):
 
     def get_matched(self) -> str:
         return self._matched
+
+    def get_output(self) -> str:
+        if self._prompt_regex:
+            return "\n".join(self._output_lines[:-1])
+        else:
+            return "\n".join(self._output_lines)
 
     def run(self) -> None:
         try:
@@ -341,8 +348,10 @@ class SerialConsoleInterface(threading.Thread):
         expected_found = None
         self._matched = ""
         end_time = datetime.now() + timedelta(seconds=timeout)
+        self._output_lines.clear()
         while True:
             line = self._get_line()
+            self._output_lines.append(line.replace("\r", ""))
             if wait_for_prompt and re.search(expected_prompt_regex, line):
                 prompt_found = True
             for not_expected_el in not_expected:
