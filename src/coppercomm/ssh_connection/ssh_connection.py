@@ -1,14 +1,14 @@
+import logging
 import socket
+import threading
 import time
 import typing
-import logging
-import threading
 from time import sleep
-from paramiko import Channel, SFTPClient, MissingHostKeyPolicy, SSHException, SFTPClient
-from paramiko.channel import ChannelFile, ChannelStderrFile
-from paramiko.ssh_exception import NoValidConnectionsError
-from paramiko.client import SSHClient
 
+from paramiko import Channel, MissingHostKeyPolicy, SFTPClient, SSHException
+from paramiko.channel import ChannelFile, ChannelStderrFile
+from paramiko.client import SSHClient
+from paramiko.ssh_exception import NoValidConnectionsError
 
 logger = logging.getLogger("SSHConnection")
 
@@ -58,9 +58,7 @@ class IgnoreHostKeys(MissingHostKeyPolicy):
 class SSHConnection:
     _ssh_mutex = threading.Lock()
 
-    def __init__(
-        self, ip: str, port: str = "22", username: str = "root", password: str = ""
-    ) -> None:
+    def __init__(self, ip: str, port: str = "22", username: str = "root", password: str = "") -> None:
         with SSHConnection._ssh_mutex:
             self.sshclient = SSHClient()
             self.ip = ip
@@ -107,9 +105,7 @@ class SSHConnection:
         if self.connected:
             self.sshclient.close()
 
-    def _is_exit_status_ready(
-        self, channel: Channel, timeout: typing.Optional[int] = 5
-    ) -> bool:
+    def _is_exit_status_ready(self, channel: Channel, timeout: typing.Optional[int] = 5) -> bool:
         if timeout is None:
             return False
         start_time = time.monotonic()
@@ -126,9 +122,7 @@ class SSHConnection:
     ) -> typing.Tuple[Channel, ChannelFile, ChannelStderrFile]:
         with SSHConnection._ssh_mutex:
             # Channels are used directly because there is no possibility set "open channel timeout" which is 3600s by default
-            channel = self.sshclient.get_transport().open_channel(
-                kind="session", timeout=open_channel_timeout
-            )
+            channel = self.sshclient.get_transport().open_channel(kind="session", timeout=open_channel_timeout)
             channel.settimeout(command_exec_timeout)
             stdout = channel.makefile()
             stderr = channel.makefile_stderr()
@@ -149,9 +143,7 @@ class SSHConnection:
             )
             channel.exec_command(command=command)
         except (NoValidConnectionsError, OSError, socket.timeout, EOFError):
-            raise SSHConnectionError(
-                f"Failed to open channel or execute command: '{command}'"
-            )
+            raise SSHConnectionError(f"Failed to open channel or execute command: '{command}'")
 
         if self._is_exit_status_ready(channel=channel, timeout=command_exec_timeout):
             exitcode = channel.recv_exit_status()
@@ -170,11 +162,7 @@ class SSHConnection:
         command_exec_timeout: typing.Optional[int] = 10,
         tries=1,
         open_channel_timeout: int = 10,
-    ) -> typing.Tuple[
-        typing.Optional[ChannelFile],
-        typing.Optional[ChannelStderrFile],
-        typing.Optional[int],
-    ]:
+    ) -> typing.Tuple[typing.Optional[ChannelFile], typing.Optional[ChannelStderrFile], typing.Optional[int],]:
         assert tries >= 1
         for tries_left in reversed(range(tries)):
             try:
@@ -191,6 +179,39 @@ class SSHConnection:
                 if tries_left == 0:
                     raise
         return (None, None, None)
+
+    def _execute_cmd_pty(
+        self,
+        command: str,
+    ) -> typing.Tuple[Channel, ChannelFile, ChannelStderrFile, typing.Optional[int]]:
+
+        try:
+            (channel, stdout, stderr) = self._create_and_setup_channel()
+            channel.get_pty()
+            channel.exec_command(command=command)
+        except (NoValidConnectionsError, OSError, socket.timeout, EOFError):
+            raise SSHConnectionError(f"Failed to open channel or execute command: '{command}'")
+
+        return channel, stdout, stderr, None
+
+    def execute_cmd_pty(
+        self,
+        command: str,
+        tries=1,
+    ) -> typing.Tuple[Channel, typing.Optional[ChannelFile], typing.Optional[ChannelStderrFile], typing.Optional[int],]:
+        assert tries >= 1
+        for tries_left in reversed(range(tries)):
+            try:
+                self.connect()
+                return self._execute_cmd_pty(
+                    command,
+                )
+            except SSHException as e:
+                logger.error(f"Command '{command}' failed with '{e}'")
+                self.disconnect()
+                if tries_left == 0:
+                    raise
+        return (None, None, None, None)
 
     def get(self, remotepath: str, localpath: str) -> None:
         self.connect()
