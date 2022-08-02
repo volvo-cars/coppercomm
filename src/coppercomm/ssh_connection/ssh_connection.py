@@ -29,13 +29,13 @@ class SSHCommandFailed(SSHException):
         super(SSHCommandFailed, self).__init__(self.error_message)
 
 
-class SSHNoExitCode(SSHException):
+class SSHTimeoutReached(SSHException):
     def __init__(self, stdout: ChannelFile, stderr: ChannelStderrFile, cmd: str = ""):
         self.stdout = stdout
         self.stderr = stderr
         self.cmd = cmd
         self.error_message = f"Command {cmd} returned no exit code"
-        super(SSHNoExitCode, self).__init__(self.error_message)
+        super(SSHTimeoutReached, self).__init__(self.error_message)
 
 
 class SSHConnectionError(SSHException):
@@ -152,7 +152,7 @@ class SSHConnection:
             return stdout, stderr, exitcode
         else:
             if command_exec_timeout is not None:
-                raise SSHNoExitCode(stdout=stdout, stderr=stderr, cmd=command)
+                raise SSHTimeoutReached(stdout=stdout, stderr=stderr, cmd=command)
         return stdout, stderr, None
 
     def execute_cmd(
