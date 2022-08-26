@@ -9,6 +9,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import contextlib
 import enum
 import glob
 import logging
@@ -165,7 +166,7 @@ class Adb:
         self.check_output("wait-for-{}".format(device_state.value), timeout=timeout)
         self._log("Device in {} state".format(device_state))
 
-    def wait_for_boot_complete(self, timeout: typing.Optional[int] = 120) -> None:
+    def wait_for_boot_complete(self, timeout: typing.Optional[int] = 240) -> None:
         """Wait for android to completely boot up.
 
         Waits for property: dev.bootcomplete == 1
@@ -173,8 +174,9 @@ class Adb:
         monotonic_timeout = time.monotonic() + timeout
 
         while time.monotonic() < monotonic_timeout:
-            if self.shell("getprop dev.bootcomplete").strip() == "1":
-                return
+            with contextlib.suppress(CommandFailedError):
+                if self.shell("getprop dev.bootcomplete").strip() == "1":
+                    return
             time.sleep(2)
         raise Exception(f"Android property 'dev.bootcomplete' != 1 after {timeout}s!")
 
