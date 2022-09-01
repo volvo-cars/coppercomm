@@ -19,8 +19,8 @@ import time
 import typing
 import datetime
 
-from coppercomm.device_common.exceptions import RemountError
-from coppercomm.device_common.local_console import CommandFailedError, execute_command
+from coppercomm.device_common.exceptions import RemountError, CommandFailedError
+from coppercomm.device_common.local_console import execute_command
 
 
 _logger = logging.getLogger("adb_interface")
@@ -33,6 +33,7 @@ class DeviceState(enum.Enum):
     ANY = "any"
     DEVICE = "device"
     RECOVERY = "recovery"
+    OFFLINE = "offline"
 
 
 class Adb:
