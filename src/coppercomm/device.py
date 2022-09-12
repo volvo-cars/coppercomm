@@ -69,6 +69,7 @@ class Device:
                 adb=adb,
                 ssh=_create_ssh_connections(factory, adb),
                 serial_devices=factory.create_serial_devices(),
+                test_log_dir=test_log_dir
             )
             for serial_connection in device.serial_devices.values():
                 exitstack.enter_context(serial_connection)

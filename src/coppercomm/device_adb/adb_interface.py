@@ -167,7 +167,7 @@ class Adb:
         self.check_output("wait-for-{}".format(device_state.value), timeout=timeout)
         self._log("Device in {} state".format(device_state))
 
-    def wait_for_boot_complete(self, timeout: typing.Optional[int] = 240) -> None:
+    def wait_for_boot_complete(self, timeout: int = 240) -> None:
         """Wait for android to completely boot up.
 
         Waits for property: dev.bootcomplete == 1
