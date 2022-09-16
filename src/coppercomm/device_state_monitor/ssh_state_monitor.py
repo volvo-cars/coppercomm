@@ -13,6 +13,7 @@ import logging
 import threading
 
 from coppercomm.ssh_connection.ssh_connection import SSHConnection
+from typing import Optional
 
 _logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ class SshStateMonitor:
     """
 
     def __init__(self, qnx_broadrreach_ssh: SSHConnection):
-        self._timer = None
+        self._timer: Optional[threading.Timer] = None
         self.is_running = False
         self.interval = 2
         self.connection = qnx_broadrreach_ssh
@@ -49,7 +50,8 @@ class SshStateMonitor:
 
     def stop(self):
         _logger.info("Closing ssh state monitor.")
-        self._timer.cancel()
+        if self._timer:
+            self._timer.cancel()
         self.is_running = False
 
     def _get_state(self):

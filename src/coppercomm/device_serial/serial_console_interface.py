@@ -56,7 +56,7 @@ class SerialConsoleInterface(threading.Thread):
         self._streaming = threading.Event()
         self._streaming.set()
         self._matched = ""
-        self._output_lines = []
+        self._output_lines: List[str] = []
         self.set_prompt(prompt)
 
     def set_test_logging(self, path):

@@ -18,14 +18,14 @@ from coppercomm.loggers.utils.log_dir import LogDir
 
 
 @pytest.fixture(scope="function")
-def log_dir(request) -> typing.Iterator[LogDir]:
+def log_dir(request) -> LogDir:
     dir_name = request.function.__name__
     log_dir = LogDir(dir_name)
     return log_dir
 
 
 @pytest.fixture(scope="session")
-def log_dir_session() -> typing.Iterator[LogDir]:
+def log_dir_session() -> LogDir:
     dir_name = "session"
     log_dir = LogDir(dir_name)
     return log_dir

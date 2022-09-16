@@ -52,5 +52,6 @@ class AdbStateMonitor:
 
     def stop(self):
         _logger.info("Closing device state monitor.")
-        self._timer.cancel()
+        if self._timer:
+            self._timer.cancel()
         self.is_running = False

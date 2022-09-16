@@ -69,7 +69,9 @@ class IgnoreHostKeys(MissingHostKeyPolicy):
 class SSHConnection:
     _ssh_mutex = threading.Lock()
 
-    def __init__(self, ip: str, port: str = "22", username: str = "root", password: str = "") -> None:
+    def __init__(
+        self, ip: str, port: str = "22", username: str = "root", password: str = ""
+    ) -> None:
         with SSHConnection._ssh_mutex:
             self.sshclient = SSHClient()
             self.ip = ip
@@ -95,7 +97,10 @@ class SSHConnection:
                     )
                     if keepalive_interval is not None:
                         transport = self.sshclient.get_transport()
-                        transport.set_keepalive(keepalive_interval)
+                        if transport:
+                            transport.set_keepalive(keepalive_interval)
+                        else:
+                            raise OSError("Can't get transport from ssh client!")
 
             except (NoValidConnectionsError, OSError, socket.timeout):
                 raise SSHConnectionError(f"Failed to connect to {self.ip}:{self.port}")
@@ -116,7 +121,9 @@ class SSHConnection:
         if self.connected:
             self.sshclient.close()
 
-    def _is_exit_status_ready(self, channel: Channel, timeout: typing.Optional[int] = 5) -> bool:
+    def _is_exit_status_ready(
+        self, channel: Channel, timeout: typing.Optional[int] = 5
+    ) -> bool:
         if timeout is None:
             return False
         start_time = time.monotonic()
@@ -133,7 +140,12 @@ class SSHConnection:
     ) -> typing.Tuple[Channel, ChannelFile, ChannelStderrFile]:
         with SSHConnection._ssh_mutex:
             # Channels are used directly because there is no possibility set "open channel timeout" which is 3600s by default
-            channel = self.sshclient.get_transport().open_channel(kind="session", timeout=open_channel_timeout)
+            transport = self.sshclient.get_transport()
+            if transport is None:
+                raise OSError("Can't get transport from ssh client!")
+            channel = transport.open_channel(
+                kind="session", timeout=open_channel_timeout
+            )
             channel.settimeout(command_exec_timeout)
             stdout = channel.makefile()
             stderr = channel.makefile_stderr()
@@ -154,7 +166,9 @@ class SSHConnection:
             )
             channel.exec_command(command=command)
         except (NoValidConnectionsError, OSError, socket.timeout, EOFError):
-            raise SSHConnectionError(f"Failed to open channel or execute command: '{command}'")
+            raise SSHConnectionError(
+                f"Failed to open channel or execute command: '{command}'"
+            )
 
         if self._is_exit_status_ready(channel=channel, timeout=command_exec_timeout):
             exitcode = channel.recv_exit_status()
@@ -173,7 +187,11 @@ class SSHConnection:
         command_exec_timeout: typing.Optional[int] = 10,
         tries=1,
         open_channel_timeout: int = 10,
-    ) -> typing.Tuple[typing.Optional[ChannelFile], typing.Optional[ChannelStderrFile], typing.Optional[int],]:
+    ) -> typing.Tuple[
+        typing.Optional[ChannelFile],
+        typing.Optional[ChannelStderrFile],
+        typing.Optional[int],
+    ]:
         assert tries >= 1
         for tries_left in reversed(range(tries)):
             try:
@@ -201,7 +219,9 @@ class SSHConnection:
             channel.get_pty()
             channel.exec_command(command=command)
         except (NoValidConnectionsError, OSError, socket.timeout, EOFError):
-            raise SSHConnectionError(f"Failed to open channel or execute command: '{command}'")
+            raise SSHConnectionError(
+                f"Failed to open channel or execute command: '{command}'"
+            )
 
         return channel, stdout, stderr, None
 
@@ -209,7 +229,12 @@ class SSHConnection:
         self,
         command: str,
         tries=1,
-    ) -> typing.Tuple[Channel, typing.Optional[ChannelFile], typing.Optional[ChannelStderrFile], typing.Optional[int],]:
+    ) -> typing.Tuple[
+        typing.Optional[Channel],
+        typing.Optional[ChannelFile],
+        typing.Optional[ChannelStderrFile],
+        typing.Optional[int],
+    ]:
         assert tries >= 1
         for tries_left in reversed(range(tries)):
             try:
@@ -227,15 +252,23 @@ class SSHConnection:
     def get(self, remotepath: str, localpath: str) -> None:
         self.connect()
         if self.connected:
-            with SFTPClient.from_transport(self.sshclient.get_transport()) as sftp:
-                sftp.get(remotepath, localpath)
-        else:
-            raise SFTPTransferFailed(f"Failed to get {remotepath} to {localpath}")
+            transport = self.sshclient.get_transport()
+            if transport:
+                client = SFTPClient.from_transport(transport)
+                if client:
+                    with client as sftp:
+                        sftp.get(remotepath, localpath)
+                        return
+        raise SFTPTransferFailed(f"Failed to get {remotepath} to {localpath}")
 
     def put(self, localpath: str, remotepath: str) -> None:
         self.connect()
         if self.connected:
-            with SFTPClient.from_transport(self.sshclient.get_transport()) as sftp:
-                sftp.put(localpath, remotepath)
-        else:
-            raise SFTPTransferFailed(f"Failed to put {localpath} to {remotepath}")
+            transport = self.sshclient.get_transport()
+            if transport:
+                client = SFTPClient.from_transport(transport)
+                if client:
+                    with client as sftp:
+                        sftp.put(localpath, remotepath)
+                        return
+        raise SFTPTransferFailed(f"Failed to put {localpath} to {remotepath}")
