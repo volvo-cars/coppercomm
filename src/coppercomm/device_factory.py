@@ -9,15 +9,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import logging
 import typing
 
 from coppercomm.device_serial.device_serial import SerialConnection
 from coppercomm.device_adb.adb_interface import Adb
 from coppercomm.ci_config import Config, SerialDeviceType
 from coppercomm.ssh_connection.ssh_connection import SSHConnection
-
-_logger = logging.getLogger(__name__)
 
 
 class DeviceResourceUnavailableError(AssertionError):
@@ -33,6 +30,9 @@ class DeviceFactory:
 
     def create_adb(self) -> Adb:
         return Adb(self.config.get_adb_device_id())
+
+    def create_phone_adb(self, element_no: int) -> Adb:
+        return Adb(self.config.get_adb_phone_device_id(element_no))
 
     def create_ssh_over_adb(self, adb: Adb) -> SSHConnection:
         # try to wait a bit for adb in case unit was just rebooted

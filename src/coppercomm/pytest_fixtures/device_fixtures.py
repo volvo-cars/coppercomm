@@ -36,13 +36,18 @@ from coppercomm.ssh_connection.ssh_connection import SSHConnection
 
 
 @pytest.fixture(scope="session")
-def device_factory(create_device_config) -> DeviceFactory:
+def device_factory() -> DeviceFactory:
     return DeviceFactory()
 
 
 @pytest.fixture(scope="session")
 def adb(device_factory: DeviceFactory) -> Adb:
     return device_factory.create_adb()
+
+
+@pytest.fixture(scope="session", params=[])
+def adb_phone(device_factory: DeviceFactory, request) -> Adb:
+    return device_factory.create_phone_adb(request.param)
 
 
 @pytest.fixture(scope="session")

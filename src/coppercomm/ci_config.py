@@ -11,7 +11,6 @@
 
 import json
 import os
-
 from dataclasses import dataclass
 from enum import Enum
 from typing import Dict, List, Union
@@ -91,13 +90,31 @@ class Config:
     def get_adb_device_id(self) -> str:
         return self.device_config_data["ADB"]["adb_device_id"]
 
+    def get_adb_phone_device_id(self, element_no: int = 0) -> str:
+        try:
+            return self.device_config_data["EXTRA_DEVICES"][element_no]["ADB_DEVICE_ID"]
+        except IndexError:
+            raise ConfigFileParseError(f"Can't find device with given index: [{element_no}].")
+
     def get_device_name(self) -> str:
         return self.device_config_data["DEVICE"]
+
+    def get_phone_product_name(self, element_no: int = 0) -> str:
+        try:
+            return self.device_config_data["EXTRA_DEVICES"][element_no]["PRODUCT_NAME"]
+        except IndexError:
+            raise ConfigFileParseError(f"Can't find device with given index: [{element_no}].")
+
+    def get_type_extra_device(self, element_no: int = 0) -> str:
+        try:
+            return self.device_config_data["EXTRA_DEVICES"][element_no]["TYPE"]
+        except IndexError:
+            raise ConfigFileParseError(f"Can't find device with given index: [{element_no}].")
 
     def get_qnx_ip(self) -> str:
         return self.device_config_data["QNX"]["ip"]
 
-    def get_config_version(self):
+    def get_config_version(self) -> str:
         return self.device_config_data.get("version", "1")
 
     def get_host_adb_sshport(self) -> str:
