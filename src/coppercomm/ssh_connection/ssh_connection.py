@@ -14,6 +14,7 @@ import socket
 import threading
 import time
 import typing
+from pathlib import Path
 from time import sleep
 
 from paramiko import Channel, MissingHostKeyPolicy, SFTPClient, SSHException
@@ -261,7 +262,11 @@ class SSHConnection:
                         return
         raise SFTPTransferFailed(f"Failed to get {remotepath} to {localpath}")
 
-    def put(self, localpath: str, remotepath: str) -> None:
+    def put(self, localpath: str, remotepath: str, chmod: int | None = None) -> None:
+        """Copy file to remote path.
+        
+        Note: SFTPClient requires that file name should be included in remote path.
+        """
         self.connect()
         if self.connected:
             transport = self.sshclient.get_transport()
@@ -269,6 +274,58 @@ class SSHConnection:
                 client = SFTPClient.from_transport(transport)
                 if client:
                     with client as sftp:
-                        sftp.put(localpath, remotepath)
+                        _put(Path(localpath), Path(remotepath), sftp, chmod)
                         return
         raise SFTPTransferFailed(f"Failed to put {localpath} to {remotepath}")
+
+    def put_all(self, source: Path, remote_dir: Path, chmod: int | None = None):
+        """Copy file or whole directory to remote path.
+
+        If remote directory already exists:
+         - Directories are merged
+         - then files are overwritten
+
+        :param source: Source dir or file to copy
+        :param remote_dir: Where to copy source to
+        :param chmod: When defined, set given permission to all files/dirs.
+        """
+        if source.is_file():
+            return self.put(source, remote_dir / source.name)
+
+        self.connect()
+        if not self.connected:
+            raise SFTPTransferFailed(f"Failed to put {source} to {remote_dir}")
+
+        with SFTPClient.from_transport(self.sshclient.get_transport()) as sftp:
+            dest_dir_str: str = remote_dir.joinpath(source.name).as_posix()
+            try:
+                sftp.lstat(dest_dir_str)  # check if dir exists
+            except IOError:
+                logger.debug("Make remote dir: %s", dest_dir_str)
+                sftp.mkdir(dest_dir_str)
+            _put_all(source, remote_dir / source.name, sftp, chmod)
+            sftp.chmod(dest_dir_str, chmod if chmod else (source.stat().st_mode & 0o777))
+
+
+def _put(local_path: Path, remotepath: Path, sftp: SFTPClient, chmod: int | None = None):
+    logger.debug("Copy %s to %s", local_path, remotepath)
+    sftp.put(local_path.as_posix(), remotepath.as_posix())
+    sftp.chmod(remotepath.as_posix(), chmod if chmod else (local_path.stat().st_mode & 0o777))
+
+
+def _put_all(local_path: Path, remotepath: Path, sftp: SFTPClient, chmod: int | None = None):
+    for path in local_path.iterdir():
+        relative_path: Path = path.relative_to(local_path)
+        dest_path_str: str = remotepath.joinpath(relative_path).as_posix()
+        if path.is_dir():
+            logger.debug("Make remote dir: %s", dest_path_str)
+            try:
+                sftp.lstat(dest_path_str)  # check if dir exists
+            except IOError:
+                sftp.mkdir(dest_path_str)
+            _put_all(path, remotepath.joinpath(relative_path), sftp)
+            sftp.chmod(dest_path_str, chmod if chmod else (path.stat().st_mode & 0o777))
+        elif path.is_file():
+            _put(path, remotepath.joinpath(relative_path), sftp, chmod)
+        else:
+            logger.warning("SFTP dont know how to copy path: %s", path)
