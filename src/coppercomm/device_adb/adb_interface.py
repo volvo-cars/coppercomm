@@ -14,9 +14,11 @@ import enum
 import glob
 import logging
 import os
+import pathlib
 import shlex
 import time
 import typing
+from typing import Union
 import datetime
 
 from coppercomm.device_common.exceptions import RemountError, CommandFailedError
@@ -28,6 +30,7 @@ _logger.setLevel(logging.DEBUG)
 
 _kernel_boot_id_path = "/proc/sys/kernel/random/boot_id"
 
+Pathish = Union[str, os.PathLike[str]]
 
 class DeviceState(enum.Enum):
     ANY = "any"
@@ -183,8 +186,8 @@ class Adb:
 
     def push(
         self,
-        local_path: str,
-        on_device_path: str,
+        local_path: Pathish,
+        on_device_path: Pathish,
         *,
         create_dest_dir: bool = False,
         sync: bool = False,
@@ -201,17 +204,17 @@ class Adb:
         :param sync: If True - run sync command after pushing all the data finished
         :param timeout: Timeout for push operation for each element if pushing multiple
         """
-        path_resolved = os.path.expandvars(os.path.expanduser(local_path))
+        path_resolved = os.path.expandvars(os.path.expanduser(str(local_path)))
         to_push_list = glob.glob(path_resolved)
         if not to_push_list:
             raise ValueError("No files found to be pushed: {}".format(local_path))
 
         if create_dest_dir:
-            self.check_output("mkdir -p {}".format(on_device_path), shell=True)
+            self.check_output("mkdir -p {}".format(str(on_device_path)), shell=True)
         for to_push_element in to_push_list:
-            self._log("Pushing {} to {}".format(to_push_element, on_device_path))
+            self._log("Pushing {} to {}".format(to_push_element, str(on_device_path)))
             self.check_output(
-                "push {} {}".format(to_push_element, on_device_path), timeout=timeout
+                "push {} {}".format(to_push_element, str(on_device_path)), timeout=timeout
             )
 
         if sync:

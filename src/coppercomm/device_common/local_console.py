@@ -17,12 +17,13 @@ import shlex
 import subprocess
 import sys
 import typing
+from typing import Union
 
 from coppercomm.device_common.exceptions import CommandFailedError, TimeoutExpiredError, PatternNotFoundError
 
 
 _logger = logging.getLogger("local_console")
-
+Pathish = Union[str, os.PathLike[str]]
 
 def resolve_path(path: str) -> str:
     path = os.path.expanduser(os.path.expandvars(path))
@@ -41,7 +42,7 @@ def execute_command(
     *,
     assert_ok: bool = True,
     timeout: typing.Optional[float] = None,
-    cwd: typing.Optional[str] = None,
+    cwd: typing.Optional[Pathish] = None,
     pattern: typing.Optional[str] = None,
     regrep: typing.Union[str, typing.Pattern[str], None] = None,
 ) -> str:
