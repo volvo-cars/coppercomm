@@ -14,7 +14,7 @@ import typing
 
 from collections.abc import Mapping
 
-from coppercomm.ci_config import Config, SerialDeviceType
+from coppercomm.config_file_parser import Config, SerialDeviceType
 from coppercomm.device_serial.serial_console_interface import SerialConsoleInterface
 from coppercomm.device_serial.console import Console
 

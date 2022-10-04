@@ -11,9 +11,9 @@
 
 import typing
 
-from coppercomm.device_serial.device_serial import SerialConnection
+from coppercomm.config_file_parser import Config, SerialDeviceType, load_config
 from coppercomm.device_adb.adb_interface import Adb
-from coppercomm.ci_config import Config, SerialDeviceType
+from coppercomm.device_serial.device_serial import SerialConnection
 from coppercomm.ssh_connection.ssh_connection import SSHConnection
 
 
@@ -26,7 +26,7 @@ class DeviceResourceUnavailableError(AssertionError):
 
 class DeviceFactory:
     def __init__(self):
-        self.config = Config(directory="~")
+        self.config: Config = load_config()
 
     def create_adb(self) -> Adb:
         return Adb(self.config.get_adb_device_id())
