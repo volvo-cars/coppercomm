@@ -11,6 +11,7 @@
 
 from abc import ABC, abstractmethod
 import logging
+from pathlib import Path
 
 
 class FlashingInterface(ABC):
@@ -34,6 +35,13 @@ class FlashingInterface(ABC):
         """
         Abstract method to trigger Android flashing process on a device
         :return: True if flashing was successful
+        """
+
+    @abstractmethod
+    def flash_gsi(self, gsi_path: Path) -> None:
+        """Abstract method to trigger flashing GSI firmware.
+
+        :param gsi_path: Path to gsi_firmware.
         """
 
     @staticmethod
