@@ -9,9 +9,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-from abc import ABC, abstractmethod
 import logging
+from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import IO
 
 
 class FlashingInterface(ABC):
@@ -21,7 +22,8 @@ class FlashingInterface(ABC):
     def __init__(self, *args, **kwargs) -> None:
         pass
 
-    FLASHER_FILE_HANDLER_NAME = "flasher_file_handler"
+    FLASHER_FILE_HANDLER_NAME = "coppercomm.flasher_file_handler"
+    FLASHING_OUTPUT_LOGGER_NAME = "flashing_output_logger"
 
     @abstractmethod
     def flash_all(self) -> bool:
@@ -47,23 +49,44 @@ class FlashingInterface(ABC):
     @staticmethod
     def setup_flasher_logger(log_file) -> None:
         """Static method that configures logger to use the output of all logs flashing to the log file."""
-        flasher_logger = logging.getLogger()
+        flasher_logger = logging.getLogger(
+            FlashingInterface.FLASHING_OUTPUT_LOGGER_NAME
+        )
         flasher_logger.setLevel(logging.DEBUG)
         flasher_logger.propagate = False
 
-        flasher_logger.info("Using logfile: %s", log_file)
+        output_handler = logging.StreamHandler()
+        output_handler.setLevel(logging.DEBUG)
+        output_handler.setFormatter(
+            logging.Formatter(
+                "%(asctime)s :: %(message)s", datefmt=r"%Y-%m-%d %H:%M:%S"
+            )
+        )
+        flasher_logger.addHandler(output_handler)
+
         flasher_file_handler = logging.FileHandler(log_file, mode="w+")
         flasher_file_handler.set_name(FlashingInterface.FLASHER_FILE_HANDLER_NAME)
         flasher_file_handler.setLevel(logging.DEBUG)
         flasher_formatter = logging.Formatter(
-            "%(asctime)s :: %(levelname)s :: %(module)s.%(funcName)s - line %(lineno)s :: %(message)s",
-            datefmt="%Y-%m-%d %H:%M:%S",
+            "%(asctime)s :: %(message)s", datefmt=r"%Y-%m-%d %H:%M:%S"
         )
         flasher_file_handler.setFormatter(flasher_formatter)
         flasher_logger.addHandler(flasher_file_handler)
 
     @staticmethod
     def flashing_info(pipe, logger) -> None:
+        # Deprecated. Use send_to_logger instead. Method will be removed when
+        # all classes switch to sent_to_logger
         """Static method that adds logger to each line of subprocess"""
         for line in iter(pipe.readline, ""):  # '\n'-separated lines
             logger.info(f"SUBPROCESS INFO: {line}")
+
+    @staticmethod
+    def send_to_logger(pipe: IO, logger: logging.Logger) -> None:
+        """Static method that send data from pipe to logger.
+
+        :param pipe: IO like object
+        :param logger: Logger to write data to
+        """
+        for line in iter(pipe.readline, ""):
+            logger.info(line.rstrip("\n"))  # logger also add's new line

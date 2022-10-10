@@ -22,7 +22,7 @@ from typing import Union
 from coppercomm.device_common.exceptions import CommandFailedError, TimeoutExpiredError, PatternNotFoundError
 
 
-_logger = logging.getLogger("local_console")
+_logger = logging.getLogger(__name__)
 Pathish = Union[str, os.PathLike[str]]
 
 def resolve_path(path: str) -> str:
