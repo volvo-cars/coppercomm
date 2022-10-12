@@ -95,6 +95,7 @@ class SSHConnection:
                         username=self.username,
                         password=self.password,
                         timeout=timeout,
+                        banner_timeout=60,
                     )
                     if keepalive_interval is not None:
                         transport = self.sshclient.get_transport()
