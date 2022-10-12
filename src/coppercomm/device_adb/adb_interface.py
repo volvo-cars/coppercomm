@@ -115,8 +115,13 @@ class Adb:
         :param retries: Retries for 'root' command - the command may failed sometimes, but passes
             after retried
         """
-        self._log("Gain ADB root permissions")
+        self._log("Gaining ADB root permissions...")
         current_state = self.get_state()
+
+        is_already_root = self.shell("whoami").strip() == "root"
+        if is_already_root:
+            self._log("User is already root, no need to gain permissions")
+            return
 
         # hard to get rid of retries :/
         # it's far more robust this way
