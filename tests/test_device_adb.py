@@ -12,6 +12,7 @@
 import tempfile
 from unittest import mock
 from unittest.mock import call
+
 from coppercomm.device_adb import adb_interface
 from coppercomm.device_adb.adb_interface import DeviceState
 from coppercomm.device_common.exceptions import RemountError
@@ -58,22 +59,19 @@ def test_adb_shell(mock_execute):
 
 @mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_gain_root_permissions(mock_execute):
-    mock_execute.return_value = None
-
+    mock_execute.side_effect = ["recovery", None, None]
     adb_interface.Adb(adb_device_id=test_adb_id).gain_root_permissions()
 
     calls = [
         call(
-            ["adb", "-s", test_adb_id, "wait-for-any"],
+            ["adb", "-s", test_adb_id, "get-state"],
             assert_ok=True,
             regrep=None,
-            timeout=60.0,
+            timeout=3,
         ),
+        call(["adb", "-s", test_adb_id, "root"], assert_ok=True, regrep=None, timeout=20),
         call(
-            ["adb", "-s", test_adb_id, "root"], assert_ok=True, regrep=None, timeout=20
-        ),
-        call(
-            ["adb", "-s", test_adb_id, "wait-for-any"],
+            ["adb", "-s", test_adb_id, "wait-for-recovery"],
             assert_ok=True,
             regrep=None,
             timeout=10,
@@ -97,9 +95,7 @@ def test_adb_get_state(mock_execute):
 @mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_wait_for_state(mock_execute):
     mock_execute.return_value = None
-    adb_interface.Adb(adb_device_id=test_adb_id).wait_for_state(
-        state=DeviceState.RECOVERY
-    )
+    adb_interface.Adb(adb_device_id=test_adb_id).wait_for_state(state=DeviceState.RECOVERY)
     mock_execute.assert_called_once_with(
         ["adb", "-s", test_adb_id, "wait-for-recovery"],
         assert_ok=True,
@@ -167,9 +163,7 @@ def test_adb_pull(mock_execute):
     mock_execute.return_value = None
 
     with tempfile.TemporaryDirectory() as tmpdir1, tempfile.TemporaryDirectory() as tmpdir2:
-        adb_interface.Adb(adb_device_id=test_adb_id).pull(
-            local_path=tmpdir1, on_device_path=tmpdir2
-        )
+        adb_interface.Adb(adb_device_id=test_adb_id).pull(local_path=tmpdir1, on_device_path=tmpdir2)
 
     mock_execute.assert_called_once_with(
         ["adb", "-s", test_adb_id, "pull", tmpdir2, tmpdir1],
@@ -208,7 +202,7 @@ def test_adb_trigger_reboot(mock_execute):
 
 @mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_reboot_and_wait(mock_execute):
-    mock_execute.side_effect = ["123", None, None, None, None, "456"]
+    mock_execute.side_effect = ["123", "device", None, None, None, "456"]
     adb_interface.Adb(adb_device_id=test_adb_id).reboot_and_wait()
 
     calls = [
@@ -226,16 +220,14 @@ def test_adb_reboot_and_wait(mock_execute):
             timeout=None,
         ),
         call(
-            ["adb", "-s", test_adb_id, "wait-for-any"],
+            ["adb", "-s", test_adb_id, "get-state"],
             assert_ok=True,
             regrep=None,
-            timeout=10,
+            timeout=3,
         ),
+        call(["adb", "-s", test_adb_id, "root"], assert_ok=True, regrep=None, timeout=20),
         call(
-            ["adb", "-s", test_adb_id, "root"], assert_ok=True, regrep=None, timeout=20
-        ),
-        call(
-            ["adb", "-s", test_adb_id, "wait-for-any"],
+            ["adb", "-s", test_adb_id, "wait-for-device"],
             assert_ok=True,
             regrep=None,
             timeout=10,
@@ -266,7 +258,7 @@ def test_adb_reboot_and_wait(mock_execute):
 
 @mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_reboot_and_wait_unable_to_reboot(mock_execute):
-    mock_execute.side_effect = ["123", None, None, None, None, "123"]
+    mock_execute.side_effect = ["123", "device", None, None, None, "123"]
     try:
         adb_interface.Adb(adb_device_id=test_adb_id).reboot_and_wait(timeout=1)
         assert False, "adb.reboot_and_wait should have raised an exception"
@@ -288,16 +280,14 @@ def test_adb_reboot_and_wait_unable_to_reboot(mock_execute):
             timeout=None,
         ),
         call(
-            ["adb", "-s", test_adb_id, "wait-for-any"],
+            ["adb", "-s", test_adb_id, "get-state"],
             assert_ok=True,
             regrep=None,
-            timeout=10,
+            timeout=3,
         ),
+        call(["adb", "-s", test_adb_id, "root"], assert_ok=True, regrep=None, timeout=20),
         call(
-            ["adb", "-s", test_adb_id, "root"], assert_ok=True, regrep=None, timeout=20
-        ),
-        call(
-            ["adb", "-s", test_adb_id, "wait-for-any"],
+            ["adb", "-s", test_adb_id, "wait-for-device"],
             assert_ok=True,
             regrep=None,
             timeout=10,
@@ -328,21 +318,19 @@ def test_adb_reboot_and_wait_unable_to_reboot(mock_execute):
 
 @mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_mount_filesytem_as_root(mock_execute):
-    mock_execute.side_effect = [None, None, None, None, "remount succeeded "]
+    mock_execute.side_effect = ["device", None, None, None, "remount succeeded "]
     adb_interface.Adb(adb_device_id=test_adb_id).mount_filesytem_as_root()
 
     calls = [
         call(
-            ["adb", "-s", test_adb_id, "wait-for-any"],
+            ["adb", "-s", test_adb_id, "get-state"],
             assert_ok=True,
             regrep=None,
-            timeout=60.0,
+            timeout=3,
         ),
+        call(["adb", "-s", test_adb_id, "root"], assert_ok=True, regrep=None, timeout=20),
         call(
-            ["adb", "-s", test_adb_id, "root"], assert_ok=True, regrep=None, timeout=20
-        ),
-        call(
-            ["adb", "-s", test_adb_id, "wait-for-any"],
+            ["adb", "-s", test_adb_id, "wait-for-device"],
             assert_ok=True,
             regrep=None,
             timeout=10,
@@ -367,18 +355,18 @@ def test_adb_mount_filesytem_as_root(mock_execute):
 @mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_mount_filesytem_as_root_unable_to_remount(mock_execute):
     mock_execute.side_effect = [
-        None,
+        "device",
         None,
         None,
         None,
         "remount failed ",
         "123",
-        None,
+        "device",
         None,
         None,
         None,
         "456",
-        None,
+        "device",
         None,
         None,
         "remount failed ",
@@ -391,16 +379,14 @@ def test_adb_mount_filesytem_as_root_unable_to_remount(mock_execute):
 
     calls = [
         call(
-            ["adb", "-s", test_adb_id, "wait-for-any"],
+            ["adb", "-s", test_adb_id, "get-state"],
             assert_ok=True,
             regrep=None,
-            timeout=60.0,
+            timeout=3,
         ),
+        call(["adb", "-s", test_adb_id, "root"], assert_ok=True, regrep=None, timeout=20),
         call(
-            ["adb", "-s", test_adb_id, "root"], assert_ok=True, regrep=None, timeout=20
-        ),
-        call(
-            ["adb", "-s", test_adb_id, "wait-for-any"],
+            ["adb", "-s", test_adb_id, "wait-for-device"],
             assert_ok=True,
             regrep=None,
             timeout=10,
@@ -431,16 +417,14 @@ def test_adb_mount_filesytem_as_root_unable_to_remount(mock_execute):
             timeout=None,
         ),
         call(
-            ["adb", "-s", test_adb_id, "wait-for-any"],
+            ["adb", "-s", test_adb_id, "get-state"],
             assert_ok=True,
             regrep=None,
-            timeout=10,
+            timeout=3,
         ),
+        call(["adb", "-s", test_adb_id, "root"], assert_ok=True, regrep=None, timeout=20),
         call(
-            ["adb", "-s", test_adb_id, "root"], assert_ok=True, regrep=None, timeout=20
-        ),
-        call(
-            ["adb", "-s", test_adb_id, "wait-for-any"],
+            ["adb", "-s", test_adb_id, "wait-for-device"],
             assert_ok=True,
             regrep=None,
             timeout=10,
@@ -465,16 +449,14 @@ def test_adb_mount_filesytem_as_root_unable_to_remount(mock_execute):
             timeout=None,
         ),
         call(
-            ["adb", "-s", test_adb_id, "wait-for-any"],
+            ["adb", "-s", test_adb_id, "get-state"],
             assert_ok=True,
             regrep=None,
-            timeout=60.0,
+            timeout=3,
         ),
+        call(["adb", "-s", test_adb_id, "root"], assert_ok=True, regrep=None, timeout=20),
         call(
-            ["adb", "-s", test_adb_id, "root"], assert_ok=True, regrep=None, timeout=20
-        ),
-        call(
-            ["adb", "-s", test_adb_id, "wait-for-any"],
+            ["adb", "-s", test_adb_id, "wait-for-device"],
             assert_ok=True,
             regrep=None,
             timeout=10,

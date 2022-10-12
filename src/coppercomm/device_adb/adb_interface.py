@@ -33,7 +33,6 @@ _kernel_boot_id_path = "/proc/sys/kernel/random/boot_id"
 Pathish = Union[str, os.PathLike]
 
 class DeviceState(enum.Enum):
-    ANY = "any"
     DEVICE = "device"
     RECOVERY = "recovery"
     OFFLINE = "offline"
@@ -108,18 +107,16 @@ class Adb:
 
     def gain_root_permissions(self, *, timeout: float = 60.0, retries: int = 3) -> None:
         """
-        Gain root permissions (adb root). Wait for device in DEVICE state before and after
+        Gain root permissions (adb root). Wait for device in current state after
         requesting for root permissions
 
-        :param timeout: Timeout for device to be available in DEVICE state BEFORE requesting
+        :param timeout: Timeout for device to be available in current state AFTER requesting
             for root permissions
         :param retries: Retries for 'root' command - the command may failed sometimes, but passes
             after retried
         """
         self._log("Gain ADB root permissions")
-
-        # no point to try root access if device is not available
-        self.wait_for_state(DeviceState.DEVICE, timeout=timeout)
+        current_state = self.get_state()
 
         # hard to get rid of retries :/
         # it's far more robust this way
@@ -138,7 +135,7 @@ class Adb:
                 last_exc = exc
             else:
                 # Device may be unavailable for some time after 'adb root' command
-                self.wait_for_state(DeviceState.DEVICE, timeout=10)
+                self.wait_for_state(current_state, timeout=10)
                 return
 
         raise CommandFailedError("Gaining root permissions failed") from last_exc
