@@ -148,8 +148,8 @@ class SSHConnection:
                 kind="session", timeout=open_channel_timeout
             )
             channel.settimeout(command_exec_timeout)
-            stdout = channel.makefile()
-            stderr = channel.makefile_stderr()
+            stdout = channel.makefile("rb")
+            stderr = channel.makefile_stderr("rb")
             return (channel, stdout, stderr)
 
     def _execute_cmd(
