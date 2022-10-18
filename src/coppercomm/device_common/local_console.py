@@ -23,7 +23,7 @@ from coppercomm.device_common.exceptions import CommandFailedError, TimeoutExpir
 
 
 _logger = logging.getLogger(__name__)
-Pathish = Union[str, os.PathLike[str]]
+Pathish = Union[str, os.PathLike]
 
 def resolve_path(path: str) -> str:
     path = os.path.expanduser(os.path.expandvars(path))

@@ -30,7 +30,7 @@ _logger.setLevel(logging.DEBUG)
 
 _kernel_boot_id_path = "/proc/sys/kernel/random/boot_id"
 
-Pathish = Union[str, os.PathLike[str]]
+Pathish = Union[str, os.PathLike]
 
 class DeviceState(enum.Enum):
     ANY = "any"
