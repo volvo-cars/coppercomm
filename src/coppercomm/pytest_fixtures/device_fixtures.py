@@ -35,7 +35,7 @@ from coppercomm.ssh_connection.ssh_connection import SSHConnection
 
 
 @pytest.fixture(scope="session")
-def device_factory() -> DeviceFactory:
+def device_factory(create_device_config) -> DeviceFactory:
     return DeviceFactory()
 
 
