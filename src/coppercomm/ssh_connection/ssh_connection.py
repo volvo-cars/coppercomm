@@ -132,7 +132,7 @@ class SSHConnection:
         while time.monotonic() < start_time + timeout:
             if channel.exit_status_ready() is True:
                 return True
-            sleep(1)
+            sleep(0.05)
         return False
 
     def _create_and_setup_channel(
