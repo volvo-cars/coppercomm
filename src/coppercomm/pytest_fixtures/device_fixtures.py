@@ -29,8 +29,6 @@ from coppercomm.config_file_parser import Config, SerialDeviceType
 from coppercomm.device_adb.adb_interface import Adb
 from coppercomm.device_factory import DeviceFactory
 from coppercomm.device_serial.device_serial import SerialConnection
-from coppercomm.device_state_monitor.adb_state_monitor import AdbStateMonitor
-from coppercomm.device_state_monitor.ssh_state_monitor import SshStateMonitor
 from coppercomm.ssh_connection.ssh_connection import SSHConnection
 
 
@@ -57,20 +55,6 @@ def qnx_ssh_over_adb(device_factory: DeviceFactory, adb: Adb) -> SSHConnection:
 @pytest.fixture(scope="session")
 def qnx_broadrreach_ssh(device_factory: DeviceFactory) -> SSHConnection:
     return device_factory.create_broadrreach_ssh()
-
-
-@pytest.fixture(scope="session")
-def adb_connection_state_monitor(adb: Adb):
-    connection_monitor = AdbStateMonitor(adb)
-    yield connection_monitor
-    connection_monitor.stop()
-
-
-@pytest.fixture(scope="session")
-def ssh_connection_state_monitor(qnx_broadrreach_ssh):
-    connection_monitor = SshStateMonitor(qnx_broadrreach_ssh=qnx_broadrreach_ssh)
-    yield connection_monitor
-    connection_monitor.stop()
 
 
 @pytest.fixture(scope="function")
