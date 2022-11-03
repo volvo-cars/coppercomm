@@ -60,6 +60,6 @@ class DeviceFactory:
     def available_serials(self) -> typing.Sequence[SerialDeviceType]:
         serials = {
             "device1": (SerialDeviceType.SupportCPU, SerialDeviceType.QNX),
-            "DHU": (SerialDeviceType.HKP, SerialDeviceType.QNX),
+            "DHU": (SerialDeviceType.SupportCPU, SerialDeviceType.QNX),
         }
         return serials[self.config.get_device_name()]

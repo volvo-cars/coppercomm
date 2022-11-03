@@ -88,7 +88,7 @@ def support_cpu_serial(device_factory: DeviceFactory) -> SerialConnection:
 
 @pytest.fixture(scope="session")
 def hkp_serial(device_factory: DeviceFactory) -> SerialConnection:
-    return device_factory.create_serial(SerialDeviceType.HKP)
+    return device_factory.create_serial(SerialDeviceType.SupportCPU)
 
 
 @pytest.fixture(scope="function")

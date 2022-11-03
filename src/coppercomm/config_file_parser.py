@@ -30,7 +30,7 @@ class ConfigFileParseError(Exception):
 class SerialDeviceType(Enum):
     QNX = "QNX"
     SupportCPU = "SupportCPU"
-    HKP = "HKP"
+    HKP = "HKP"  # TODO: Should be removed. Use SupportCPU instead.
 
 
 class Config:
