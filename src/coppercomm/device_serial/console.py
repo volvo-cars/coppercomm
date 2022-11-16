@@ -78,3 +78,6 @@ class Console(ConsoleInterface):
 
     def set_prompt(self, prompt: typing.Union[str, typing.List[str]]) -> None:
         self.console_object.set_prompt(prompt)
+
+    def get_output(self):
+        return self.console_object.get_output()
