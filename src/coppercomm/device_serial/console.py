@@ -10,7 +10,7 @@
 # limitations under the License.
 
 import typing
-
+import time
 from coppercomm.device_common.interfaces import ConsoleInterface, Expectations
 from coppercomm.device_serial.serial_console_interface import SerialConsoleInterface
 
@@ -55,17 +55,29 @@ class Console(ConsoleInterface):
         check_echo: bool = True,
         wait_for_prompt: bool = True,
         prompt: typing.Union[str, typing.List[str], None] = None,
-        send_linebreak: bool = True
+        send_linebreak: bool = True,
+        number_of_attempts: int = 1,
+        attempt_delay: float = 2,
     ) -> int:
-        return self.console_object.send_command(
-            command,
-            check_echo=check_echo,
-            expected_in_output=pattern,
-            timeout=timeout,
-            wait_for_prompt=wait_for_prompt,
-            prompt=prompt,
-            send_linebreak=send_linebreak
-        )
+        """
+        :param number_of_attempts: Number of attempts to run command.
+        :param attempt_delay: Delay between attempts in seconds.
+        """
+        for _ in range(number_of_attempts):
+            try:
+                return self.console_object.send_command(
+                    command,
+                    check_echo=check_echo,
+                    expected_in_output=pattern,
+                    timeout=timeout,
+                    wait_for_prompt=wait_for_prompt,
+                    prompt=prompt,
+                    send_linebreak=send_linebreak,
+                )
+            except AssertionError as e:
+                time.sleep(attempt_delay)
+                error = e
+        raise error
 
     def expect(self, pattern: Expectations, timeout: float) -> int:
         return self.console_object.expect(expected=pattern, timeout=timeout)
