@@ -19,7 +19,7 @@ class Console(ConsoleInterface):
     def __init__(
         self,
         connection_address: str,
-        prompt: typing.Union[str, typing.List[str]],
+        prompt: typing.Union[str, typing.List[str], None],
         connection_name: str,
     ) -> None:
         console_object = SerialConsoleInterface(
@@ -35,7 +35,7 @@ class Console(ConsoleInterface):
         check_echo: bool = True,
         wait_for_prompt: bool = False,
         timeout: float = 1,
-        prompt: typing.Union[str, typing.List[str]] = None,
+        prompt: typing.Union[str, typing.List[str], None] = None,
         send_linebreak: bool = True
     ) -> None:
         self.console_object.send_command(
@@ -54,7 +54,7 @@ class Console(ConsoleInterface):
         timeout: float,
         check_echo: bool = True,
         wait_for_prompt: bool = True,
-        prompt: typing.Union[str, typing.List[str]] = None,
+        prompt: typing.Union[str, typing.List[str], None] = None,
         send_linebreak: bool = True
     ) -> int:
         return self.console_object.send_command(

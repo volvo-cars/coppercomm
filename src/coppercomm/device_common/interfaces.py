@@ -41,7 +41,7 @@ class ConsoleInterface(object):
         check_echo: bool = True,
         wait_for_prompt: bool = False,
         timeout: float = 2,
-        prompt: typing.Union[str, typing.List[str]] = None,
+        prompt: typing.Union[str, typing.List[str], None] = None,
     ) -> None:
         """
         Method that sends a line on the console (using console_object)
@@ -56,7 +56,7 @@ class ConsoleInterface(object):
         timeout: float,
         check_echo: bool = True,
         wait_for_prompt: bool = True,
-        prompt: typing.Union[str, typing.List[str]] = None,
+        prompt: typing.Union[str, typing.List[str], None] = None,
     ) -> int:
         """
         Method that send a line on the console and expects a pattern or
@@ -109,7 +109,7 @@ class PowerController(object):
 
     __metaclass__ = ABCMeta
 
-    def __init__(self, logger: logging.Logger = None) -> None:
+    def __init__(self, logger: typing.Union[logging.Logger, None] = None) -> None:
         if logger:
             self.logger = logger
         else:
