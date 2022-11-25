@@ -17,6 +17,7 @@ from typing.re import Pattern  # type: ignore
 import subprocess
 import threading
 import logging
+import pathlib
 import serial
 import shutil
 import sys
@@ -188,9 +189,12 @@ class SerialConsoleInterface(threading.Thread):
         return found
 
     def _check_connection_address(self, connection_address: str) -> None:
+        dev_path = pathlib.Path('/dev')
+        tty_list = [p.as_posix() for p in dev_path.glob(pattern="tty*")]
         if not os.path.exists(connection_address):
             self._raise_exception(
-                "Connection address {} doesn't exists".format(connection_address),
+                "Connection address {} doesn't exists.\
+                List with available tty serials: {}".format(connection_address, tty_list),
                 CopperCommConnectionError,
                 log_level=logging.ERROR,
             )
