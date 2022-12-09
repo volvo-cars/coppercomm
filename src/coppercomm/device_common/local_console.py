@@ -76,12 +76,9 @@ def execute_command(
             cwd=cwd,
         )
     except subprocess.TimeoutExpired as e:
-        if e.output:
-            cmd_output = e.stdout.decode(sys.getdefaultencoding(), errors="replace")
-
-        _logger.debug(
-            "Cmd {} timeouted, captured output:\n{}".format(command, cmd_output)
-        )
+        if e.output and _logger.isEnabledFor(logging.DEBUG):
+            cmd_output = e.output.decode(sys.getdefaultencoding(), errors="replace")
+            _logger.debug("Cmd %s timeouted, captured output:\n%s", command, cmd_output)
         raise TimeoutExpiredError(
             "Timeout {}s for {} exceeded".format(timeout, command)
         )

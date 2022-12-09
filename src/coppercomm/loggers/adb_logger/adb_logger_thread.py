@@ -161,11 +161,11 @@ class AdbLoggerThread(threading.Thread):
             except subprocess.CalledProcessError as e:
                 if not self._append_after_interrupt:
                     self._stop_if_cmd_consequently_exits_before_adb_looses_connection()
-                self._logger.debug("{} returned {} stdout:{} stderr:{}".format(e.cmd, e.returncode, e.stdout, e.stderr))
+                self._logger.debug("%s returned %s stdout:%s stderr:%s", e.cmd, e.returncode, e.stdout, e.stderr)
                 sleep(0.3)
             except subprocess.TimeoutExpired as e:
                 self._logger.debug(
-                    "Timeout {}s expired on {}, stdout: {} stderr: {}".format(e.timeout, e.cmd, e.stdout, e.stderr)
+                    "Timeout %ss expired on %s, stdout: %s stderr: %s", e.timeout, e.cmd, e.stdout, e.stderr
                 )
 
     def _stop_if_cmd_consequently_exits_before_adb_looses_connection(self) -> None:
