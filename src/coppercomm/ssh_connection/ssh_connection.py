@@ -22,6 +22,7 @@ from paramiko.channel import ChannelFile, ChannelStderrFile
 from paramiko.client import SSHClient
 from paramiko.ssh_exception import NoValidConnectionsError
 
+
 logger = logging.getLogger("SSHConnection")
 
 
@@ -190,12 +191,13 @@ class SSHConnection:
         tries=1,
         open_channel_timeout: int = 10,
     ) -> typing.Tuple[
-        typing.Optional[ChannelFile],
-        typing.Optional[ChannelStderrFile],
+        ChannelFile,
+        ChannelStderrFile,
         typing.Optional[int],
     ]:
-        assert tries >= 1
-        for tries_left in reversed(range(tries)):
+        if tries < 1:
+            raise ValueError("Number of 'tries' must be >= 1")
+        for _ in range(tries):
             try:
                 self.connect()
                 return self._execute_cmd(
@@ -205,11 +207,10 @@ class SSHConnection:
                     command_exec_timeout=command_exec_timeout,
                 )
             except SSHException as e:
-                logger.debug(f"Command '{command}' failed with '{e}'")
+                logger.debug("Command '%s' failed with '%s'", command, e)
                 self.disconnect()
-                if tries_left == 0:
-                    raise
-        return (None, None, None)
+                last_e = e
+        raise last_e
 
     def _execute_cmd_pty(
         self,
@@ -231,14 +232,10 @@ class SSHConnection:
         self,
         command: str,
         tries=1,
-    ) -> typing.Tuple[
-        typing.Optional[Channel],
-        typing.Optional[ChannelFile],
-        typing.Optional[ChannelStderrFile],
-        typing.Optional[int],
-    ]:
-        assert tries >= 1
-        for tries_left in reversed(range(tries)):
+    ) -> typing.Tuple[Channel, ChannelFile, ChannelStderrFile, typing.Optional[int]]:
+        if tries < 1:
+            raise ValueError("Number of 'tries' must be >= 1")
+        for _ in range(tries):
             try:
                 self.connect()
                 return self._execute_cmd_pty(
@@ -247,9 +244,8 @@ class SSHConnection:
             except SSHException as e:
                 logger.error(f"Command '{command}' failed with '{e}'")
                 self.disconnect()
-                if tries_left == 0:
-                    raise
-        return (None, None, None, None)
+                last_e = e
+        raise last_e
 
     def get(self, remotepath: str, localpath: str) -> None:
         self.connect()
