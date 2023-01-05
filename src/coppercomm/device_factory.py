@@ -19,9 +19,7 @@ from coppercomm.ssh_connection.ssh_connection import SSHConnection
 
 class DeviceResourceUnavailableError(AssertionError):
     def __init__(self, resource: str):
-        super().__init__(
-            f"{resource} not available. Is the device type correct in configuration file?"
-        )
+        super().__init__(f"{resource} not available. Is the device type correct in configuration file?")
 
 
 class DeviceFactory:
@@ -31,8 +29,10 @@ class DeviceFactory:
     def create_adb(self) -> Adb:
         return Adb(self.config.get_adb_device_id())
 
-    def create_phone_adb(self, element_no: int) -> Adb:
-        return Adb(self.config.get_adb_phone_device_id(element_no))
+    def create_phone_adb(self) -> Adb | list[Adb]:
+        if type(self.config.get_adb_extra_device_id()) == list:
+            return [Adb(device_id) for device_id in self.config.get_adb_extra_device_id()]
+        return Adb(self.config.get_adb_extra_device_id())
 
     def create_ssh_over_adb(self, adb: Adb) -> SSHConnection:
         # try to wait a bit for adb in case unit was just rebooted

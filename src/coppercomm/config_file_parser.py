@@ -16,7 +16,6 @@ import functools
 from enum import Enum
 from pathlib import Path
 
-
 DEFAULT_CONFIG_ENV_VARIABLE = "DEVICE_CONFIG_FILE"
 DEFAULT_CONFIG_FILENAME = "device_config.json"
 
@@ -42,40 +41,64 @@ class Config:
     def get_serial_device_path(self, serial_device: SerialDeviceType) -> str:
         return self.device_config_data[serial_device.value]["tty"]
 
-    def get_serial_prompt(
-        self, serial_device: SerialDeviceType
-    ) -> str | list[str]:
+    def get_serial_prompt(self, serial_device: SerialDeviceType) -> str | list[str]:
         return ""
 
     def get_adb_device_id(self) -> str:
         return self.device_config_data["ADB"]["adb_device_id"]
 
-    def get_adb_phone_device_id(self, element_no: int = 0) -> str:
+    def get_adb_extra_device_id(self) -> str | list[str]:
+        """Get the id of extra device.
+
+        If many extra devices, return list with ids
+        """
         try:
-            return self.device_config_data["EXTRA_DEVICES"][element_no]["ADB_DEVICE_ID"]
-        except IndexError:
-            raise ConfigFileParseError(
-                f"Can't find device with given index: [{element_no}]."
-            )
+            amount_of_extra_devices = len(self.device_config_data["EXTRA_DEVICES"])
+            if amount_of_extra_devices == 1:
+                return self.device_config_data["EXTRA_DEVICES"][0]["ADB_DEVICE_ID"]
+            else:
+                return [
+                    self.device_config_data["EXTRA_DEVICES"][number]["ADB_DEVICE_ID"]
+                    for number in range(amount_of_extra_devices)
+                ]
+        except KeyError:
+            raise ConfigFileParseError("No extra devices connected")
 
     def get_device_name(self) -> str:
         return self.device_config_data["DEVICE"]
 
-    def get_phone_product_name(self, element_no: int = 0) -> str:
-        try:
-            return self.device_config_data["EXTRA_DEVICES"][element_no]["PRODUCT_NAME"]
-        except IndexError:
-            raise ConfigFileParseError(
-                f"Can't find device with given index: [{element_no}]."
-            )
+    def get_product_name_extra_device(self) -> str | list[str]:
+        """Get the product name of extra device.
 
-    def get_type_extra_device(self, element_no: int = 0) -> str:
+        If many extra devices, return list with product names
+        """
         try:
-            return self.device_config_data["EXTRA_DEVICES"][element_no]["TYPE"]
-        except IndexError:
-            raise ConfigFileParseError(
-                f"Can't find device with given index: [{element_no}]."
-            )
+            amount_of_extra_devices = len(self.device_config_data["EXTRA_DEVICES"])
+            if amount_of_extra_devices == 1:
+                return self.device_config_data["EXTRA_DEVICES"][0]["PRODUCT_NAME"]
+            else:
+                return [
+                    self.device_config_data["EXTRA_DEVICES"][number]["PRODUCT_NAME"]
+                    for number in range(amount_of_extra_devices)
+                ]
+        except KeyError:
+            raise ConfigFileParseError("No extra devices connected")
+
+    def get_type_extra_device(self) -> str | list[str]:
+        """Get the type of extra device.
+
+        If many extra devices, return list with types
+        """
+        try:
+            amount_of_extra_devices = len(self.device_config_data["EXTRA_DEVICES"])
+            if amount_of_extra_devices == 1:
+                return self.device_config_data["EXTRA_DEVICES"][0]["TYPE"]
+            else:
+                return [
+                    self.device_config_data["EXTRA_DEVICES"][number]["TYPE"] for number in range(amount_of_extra_devices)
+                ]
+        except KeyError:
+            raise ConfigFileParseError("No extra devices connected")
 
     def get_qnx_ip(self) -> str:
         return self.device_config_data["QNX"]["ip"]
@@ -162,8 +185,7 @@ def load_config(
 
     if not config_file:
         raise ConfigFileParseError(
-            f"'{filename}' file not found. "
-            f"Either export '{env_variable}' or put file in CWD or HOME folder."
+            f"'{filename}' file not found. " f"Either export '{env_variable}' or put file in CWD or HOME folder."
         )
 
     with config_file.open("r") as fh:

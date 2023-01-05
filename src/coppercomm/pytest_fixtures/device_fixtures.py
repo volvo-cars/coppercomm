@@ -42,9 +42,13 @@ def adb(device_factory: DeviceFactory) -> Adb:
     return device_factory.create_adb()
 
 
-@pytest.fixture(scope="session", params=[])
-def adb_phone(device_factory: DeviceFactory, request) -> Adb:
-    return device_factory.create_phone_adb(request.param)
+@pytest.fixture(scope="session")
+def adb_phone(device_factory: DeviceFactory) -> Adb | list[Adb]:
+    """This fixture will return adb interface of extra device connected.
+
+    If multiple devices are connected, list with adb interfaces for each device will be returned.
+    """
+    return device_factory.create_phone_adb()
 
 
 @pytest.fixture(scope="session")
