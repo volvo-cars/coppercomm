@@ -9,10 +9,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 from __future__ import annotations
+
+import functools
 import json
 import logging
 import os
-import functools
 from enum import Enum
 from pathlib import Path
 
@@ -47,58 +48,32 @@ class Config:
     def get_adb_device_id(self) -> str:
         return self.device_config_data["ADB"]["adb_device_id"]
 
-    def get_adb_extra_device_id(self) -> str | list[str]:
-        """Get the id of extra device.
+    def get_extra_devices_ids(self) -> list[str]:
+        """Get the list with extra devices ids."""
 
-        If many extra devices, return list with ids
-        """
         try:
-            amount_of_extra_devices = len(self.device_config_data["EXTRA_DEVICES"])
-            if amount_of_extra_devices == 1:
-                return self.device_config_data["EXTRA_DEVICES"][0]["ADB_DEVICE_ID"]
-            else:
-                return [
-                    self.device_config_data["EXTRA_DEVICES"][number]["ADB_DEVICE_ID"]
-                    for number in range(amount_of_extra_devices)
-                ]
-        except KeyError:
-            raise ConfigFileParseError("No extra devices connected")
+            return [device["ADB_DEVICE_ID"] for device in self.device_config_data["EXTRA_DEVICES"]]
+        except KeyError as e:
+            raise ConfigFileParseError("Reading config was failed or no extra devices connected") from e
 
     def get_device_name(self) -> str:
         return self.device_config_data["DEVICE"]
 
-    def get_product_name_extra_device(self) -> str | list[str]:
-        """Get the product name of extra device.
+    def get_extra_devices_product_names(self) -> list[str]:
+        """Get the list with extra devices product names."""
 
-        If many extra devices, return list with product names
-        """
         try:
-            amount_of_extra_devices = len(self.device_config_data["EXTRA_DEVICES"])
-            if amount_of_extra_devices == 1:
-                return self.device_config_data["EXTRA_DEVICES"][0]["PRODUCT_NAME"]
-            else:
-                return [
-                    self.device_config_data["EXTRA_DEVICES"][number]["PRODUCT_NAME"]
-                    for number in range(amount_of_extra_devices)
-                ]
-        except KeyError:
-            raise ConfigFileParseError("No extra devices connected")
+            return [device["PRODUCT_NAME"] for device in self.device_config_data["EXTRA_DEVICES"]]
+        except KeyError as e:
+            raise ConfigFileParseError("Reading config was failed or no extra devices connected") from e
 
-    def get_type_extra_device(self) -> str | list[str]:
-        """Get the type of extra device.
+    def get_extra_devices_types(self) -> list[str]:
+        """Get the list with extra devices types."""
 
-        If many extra devices, return list with types
-        """
         try:
-            amount_of_extra_devices = len(self.device_config_data["EXTRA_DEVICES"])
-            if amount_of_extra_devices == 1:
-                return self.device_config_data["EXTRA_DEVICES"][0]["TYPE"]
-            else:
-                return [
-                    self.device_config_data["EXTRA_DEVICES"][number]["TYPE"] for number in range(amount_of_extra_devices)
-                ]
-        except KeyError:
-            raise ConfigFileParseError("No extra devices connected")
+            return [device["TYPE"] for device in self.device_config_data["EXTRA_DEVICES"]]
+        except KeyError as e:
+            raise ConfigFileParseError("Reading config was failed or no extra devices connected") from e
 
     def get_qnx_ip(self) -> str:
         return self.device_config_data["QNX"]["ip"]

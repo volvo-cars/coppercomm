@@ -43,11 +43,8 @@ def adb(device_factory: DeviceFactory) -> Adb:
 
 
 @pytest.fixture(scope="session")
-def adb_phone(device_factory: DeviceFactory) -> Adb | list[Adb]:
-    """This fixture will return adb interface of extra device connected.
-
-    If multiple devices are connected, list with adb interfaces for each device will be returned.
-    """
+def adb_phone(device_factory: DeviceFactory) -> list[Adb]:
+    """This fixture will return list with adb interface for each extra device."""
     return device_factory.create_phone_adb()
 
 
