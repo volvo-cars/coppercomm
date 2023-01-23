@@ -62,6 +62,7 @@ class Adb:
         assert_ok: bool = True,
         regrep: typing.Union[str, typing.Pattern[str], None] = None,
         timeout: typing.Optional[float] = None,
+        log_output: bool = True
     ) -> str:
         """
         Execute command on adb device. If 'command' passed as a string it will be splitted by shlex.split
@@ -71,6 +72,7 @@ class Adb:
         :param assert_ok: If True - check the exit code and raise an exception if command failed
         :param regrep: Filter lines in the output of the command with regex
         :param timeout: Timeout for a command
+        :param log_output: Whether to send output to the logger
         :returns: Command's output (stdout and stderr combined)
         """
 
@@ -81,7 +83,7 @@ class Adb:
 
         adb_command = self._adb_cmd + command
         return execute_command(
-            adb_command, assert_ok=assert_ok, regrep=regrep, timeout=timeout
+            adb_command, assert_ok=assert_ok, regrep=regrep, timeout=timeout, log_output=log_output
         )
 
     def shell(
@@ -91,6 +93,7 @@ class Adb:
         assert_ok: bool = True,
         regrep: typing.Union[str, typing.Pattern[str], None] = None,
         timeout: typing.Optional[float] = None,
+        log_output: bool = True
     ) -> str:
         """
         Same as using check_output with shell=True argument
@@ -99,10 +102,11 @@ class Adb:
         :param assert_ok: If True - check the exit code and raise an exception if command failed
         :param regrep: Filter lines in the output of the command with regex
         :param timeout: Timeout for a command
+        :param log_output: Whether to send output to the logger
         :returns: Command's output (stdout and stderr combined)
         """
         return self.check_output(
-            command, shell=True, assert_ok=assert_ok, regrep=regrep, timeout=timeout
+            command, shell=True, assert_ok=assert_ok, regrep=regrep, timeout=timeout, log_output=log_output
         )
 
     def gain_root_permissions(self, *, timeout: float = 60.0, retries: int = 3) -> None:

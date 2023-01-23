@@ -45,6 +45,7 @@ def execute_command(
     cwd: typing.Optional[Pathish] = None,
     pattern: typing.Optional[str] = None,
     regrep: typing.Union[str, typing.Pattern[str], None] = None,
+    log_output: bool = True
 ) -> str:
     """
     Execute command with subprocess and search for given pattern if provided
@@ -55,6 +56,7 @@ def execute_command(
     :param cwd: path where the command will be executed
     :param pattern: pattern to search for in output
     :param regrep: Regex/string to use to filter the output of the command
+    :param log_output: Whether to send command output to the logger
     :return: output of command if pattern is None - matched fragment otherwise
     :raises: CommandFailedError if assert_ok is True and returncode != 0
         TimeoutExpiredError if timeout expired and command not finished
@@ -95,7 +97,8 @@ def execute_command(
         ]
         cmd_output = "\n".join(cmd_output_lines)
 
-    _logger.debug("Output of {}:\n{}".format(command, cmd_output))
+    if log_output:
+        _logger.debug("Output of %s:\n%s", command, cmd_output)
     if assert_ok and completed_process.returncode != 0:
         raise CommandFailedError(
             "Cmd {} failed with returncode {}".format(
