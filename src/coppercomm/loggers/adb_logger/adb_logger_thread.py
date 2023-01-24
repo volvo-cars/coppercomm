@@ -201,7 +201,7 @@ class AdbLoggerThread(threading.Thread):
     def _start_logging(self) -> None:
         self._logger.debug("Sending {}".format(self._full_cmd_as_list(self._command)))
         self._connection = subprocess.Popen(
-            self._full_cmd_as_list(self._command), stdout=self._file, stderr=subprocess.PIPE  # type: ignore[arg-type]
+            self._full_cmd_as_list(self._command), stdout=self._file, stderr=subprocess.STDOUT  # type: ignore[arg-type]
         )
 
     def _setup_file(self) -> None:
