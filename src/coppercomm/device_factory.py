@@ -52,7 +52,6 @@ class DeviceFactory:
     def create_serial(self, serial_device_type: SerialDeviceType) -> SerialConnection:
         if serial_device_type not in self.available_serials():
             raise DeviceResourceUnavailableError(f"{serial_device_type}")
-
         return SerialConnection(self.config, serial_device_type)
 
     def available_serials(self) -> typing.Sequence[SerialDeviceType]:

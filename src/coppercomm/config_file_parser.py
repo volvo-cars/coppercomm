@@ -40,7 +40,10 @@ class Config:
         self.device_config_data = data
 
     def get_serial_device_path(self, serial_device: SerialDeviceType) -> str:
-        return self.device_config_data[serial_device.value]["tty"]
+        try:
+            return self.device_config_data[serial_device.value]["tty"]
+        except KeyError as e:
+            raise ConfigFileParseError("Reading config was failed. Can't find data in the config") from e
 
     def get_serial_prompt(self, serial_device: SerialDeviceType) -> str | list[str]:
         return ""
@@ -50,7 +53,6 @@ class Config:
 
     def get_extra_devices_ids(self) -> list[str]:
         """Get the list with extra devices ids."""
-
         try:
             return [device["ADB_DEVICE_ID"] for device in self.device_config_data["EXTRA_DEVICES"]]
         except KeyError as e:
@@ -61,7 +63,6 @@ class Config:
 
     def get_extra_devices_product_names(self) -> list[str]:
         """Get the list with extra devices product names."""
-
         try:
             return [device["PRODUCT_NAME"] for device in self.device_config_data["EXTRA_DEVICES"]]
         except KeyError as e:
@@ -69,14 +70,16 @@ class Config:
 
     def get_extra_devices_types(self) -> list[str]:
         """Get the list with extra devices types."""
-
         try:
             return [device["TYPE"] for device in self.device_config_data["EXTRA_DEVICES"]]
         except KeyError as e:
             raise ConfigFileParseError("Reading config was failed or no extra devices connected") from e
 
     def get_qnx_ip(self) -> str:
-        return self.device_config_data["QNX"]["ip"]
+        try:
+            return self.device_config_data["QNX"]["ip"]
+        except KeyError as e:
+            raise ConfigFileParseError("Reading config was failed. Can't find data in the config") from e
 
     def get_config_version(self) -> str:
         return self.device_config_data.get("version", "1")

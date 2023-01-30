@@ -54,9 +54,11 @@ def qnx_ssh_over_adb(device_factory: DeviceFactory, adb: Adb) -> SSHConnection:
 
 
 @pytest.fixture(scope="session")
-def qnx_broadrreach_ssh(device_factory: DeviceFactory) -> SSHConnection:
-    return device_factory.create_broadrreach_ssh()
-
+def qnx_broadrreach_ssh(device_factory: DeviceFactory) -> SSHConnection | None:
+    try:
+        return device_factory.create_broadrreach_ssh()
+    except:
+        return None
 
 @pytest.fixture(scope="function")
 def device_available(adb_connection_state_monitor, ssh_connection_state_monitor):
@@ -78,9 +80,11 @@ def device_available(adb_connection_state_monitor, ssh_connection_state_monitor)
 
 
 @pytest.fixture(scope="session")
-def qnx_serial(device_factory: DeviceFactory) -> SerialConnection:
-    return device_factory.create_serial(SerialDeviceType.QNX)
-
+def qnx_serial(device_factory: DeviceFactory) -> SerialConnection | None:
+    try:
+        return device_factory.create_serial(SerialDeviceType.QNX)
+    except:
+        return None
 
 @pytest.fixture(scope="session")
 def support_cpu_serial(device_factory: DeviceFactory) -> SerialConnection:
