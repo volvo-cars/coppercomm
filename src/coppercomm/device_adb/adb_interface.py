@@ -306,6 +306,7 @@ class Adb:
         """
         _logger.info("Performing factory reset through recovery..")
         self.reboot_and_wait(mode="recovery")
+        self.wait_for_state(DeviceState.RECOVERY, timeout=120)
         self.gain_root_permissions()
         self.shell("recovery --wipe_data")
         self.wait_for_state(DeviceState.DEVICE)
