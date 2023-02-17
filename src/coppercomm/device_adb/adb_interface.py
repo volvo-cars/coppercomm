@@ -181,11 +181,13 @@ class Adb:
 
         Waits for property: dev.bootcomplete == 1
         """
+        _logger.debug("Waiting for android property dev.bootcomplete == 1 (timeout %ds)..", timeout)
+
         monotonic_timeout = time.monotonic() + timeout
 
         while time.monotonic() < monotonic_timeout:
             with contextlib.suppress(CommandFailedError):
-                if self.shell("getprop dev.bootcomplete").strip() == "1":
+                if self.shell("getprop dev.bootcomplete", log_output=False).strip() == "1":
                     return
             time.sleep(2)
         raise Exception(f"Android property 'dev.bootcomplete' != 1 after {timeout}s!")

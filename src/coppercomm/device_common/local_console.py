@@ -62,7 +62,8 @@ def execute_command(
         TimeoutExpiredError if timeout expired and command not finished
         PatternNotFoundError if pattern provided and not found in output
     """
-    _logger.debug("Executing command: {}".format(command))
+    if log_output:
+        _logger.debug("Executing command: %s", command)
 
     if isinstance(command, str):
         command = shlex.split(command)
