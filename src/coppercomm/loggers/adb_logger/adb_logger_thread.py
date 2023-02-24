@@ -167,6 +167,7 @@ class AdbLoggerThread(threading.Thread):
                 self._logger.debug(
                     "Timeout %ss expired on %s, stdout: %s stderr: %s", e.timeout, e.cmd, e.stdout, e.stderr
                 )
+                self.stop_logging()
 
     def _stop_if_cmd_consequently_exits_before_adb_looses_connection(self) -> None:
         """
