@@ -27,6 +27,16 @@ class ConfigFileParseError(Exception):
     pass
 
 
+def throw_config_error_on_value_missing_in_config(func):
+    def wrap(*args, **kwargs):
+        try:
+            return func(*args, **kwargs)
+        except KeyError as e:
+            raise ConfigFileParseError("Unable to retrieve value from config.") from e
+
+    return wrap
+
+
 class SerialDeviceType(Enum):
     QNX = "QNX"
     SupportCPU = "SupportCPU"
@@ -39,54 +49,53 @@ class Config:
     def __init__(self, data: dict) -> None:
         self.device_config_data = data
 
+    @throw_config_error_on_value_missing_in_config
     def get_serial_device_path(self, serial_device: SerialDeviceType) -> str:
-        try:
-            return self.device_config_data[serial_device.value]["tty"]
-        except KeyError as e:
-            raise ConfigFileParseError("Reading config was failed. Can't find data in the config") from e
+        return self.device_config_data[serial_device.value]["tty"]
 
     def get_serial_prompt(self, serial_device: SerialDeviceType) -> str | list[str]:
         return ""
 
+    @throw_config_error_on_value_missing_in_config
     def get_adb_device_id(self) -> str:
         return self.device_config_data["ADB"]["adb_device_id"]
 
+    @throw_config_error_on_value_missing_in_config
     def get_extra_devices_ids(self) -> list[str]:
         """Get the list with extra devices ids."""
-        try:
-            return [device["ADB_DEVICE_ID"] for device in self.device_config_data["EXTRA_DEVICES"]]
-        except KeyError as e:
-            raise ConfigFileParseError("Reading config was failed or no extra devices connected") from e
+        return [device["ADB_DEVICE_ID"] for device in self.device_config_data["EXTRA_DEVICES"]]
 
+    @throw_config_error_on_value_missing_in_config
     def get_device_name(self) -> str:
         return self.device_config_data["DEVICE"]
 
+    @throw_config_error_on_value_missing_in_config
+    def get_product_name(self) -> str:
+        return self.device_config_data["PRODUCT_NAME"]
+
+    @throw_config_error_on_value_missing_in_config
     def get_extra_devices_product_names(self) -> list[str]:
         """Get the list with extra devices product names."""
-        try:
-            return [device["PRODUCT_NAME"] for device in self.device_config_data["EXTRA_DEVICES"]]
-        except KeyError as e:
-            raise ConfigFileParseError("Reading config was failed or no extra devices connected") from e
+        return [device["PRODUCT_NAME"] for device in self.device_config_data["EXTRA_DEVICES"]]
 
+    @throw_config_error_on_value_missing_in_config
     def get_extra_devices_types(self) -> list[str]:
         """Get the list with extra devices types."""
-        try:
-            return [device["TYPE"] for device in self.device_config_data["EXTRA_DEVICES"]]
-        except KeyError as e:
-            raise ConfigFileParseError("Reading config was failed or no extra devices connected") from e
+        return [device["TYPE"] for device in self.device_config_data["EXTRA_DEVICES"]]
 
+    @throw_config_error_on_value_missing_in_config
     def get_qnx_ip(self) -> str:
-        try:
-            return self.device_config_data["QNX"]["ip"]
-        except KeyError as e:
-            raise ConfigFileParseError("Reading config was failed. Can't find data in the config") from e
+        return self.device_config_data["QNX"]["ip"]
 
+    @throw_config_error_on_value_missing_in_config
     def get_config_version(self) -> str:
         return self.device_config_data.get("version", "1")
 
+    @throw_config_error_on_value_missing_in_config
     def get_host_adb_sshport(self) -> str:
         return self.device_config_data["HOST"]["adb_ssh_port"]
 
+    @throw_config_error_on_value_missing_in_config
     def get_host_broadrreach_ethernet_interface_name(self) -> str:
         return self.device_config_data["NETWORK"]["interface"]
 
