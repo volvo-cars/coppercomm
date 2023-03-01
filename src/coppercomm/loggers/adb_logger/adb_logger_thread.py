@@ -218,9 +218,7 @@ class AdbLoggerThread(threading.Thread):
         with AdbLoggerThread._establishing_connection_lock:
             self._logger.debug("Setup adb connection start")
             self._logged_subprocess_run("start-server", logging_level=SUPER_DEBUG_LEVEL)
-            self._logged_subprocess_run(
-                "wait-for-device-recovery-rescue-sideload-bootloader",logging_level=SUPER_DEBUG_LEVEL
-            )
+            self._logged_subprocess_run("wait-for-any", logging_level=SUPER_DEBUG_LEVEL)
             self._logged_subprocess_run("root", logging_level=SUPER_DEBUG_LEVEL)
             # immediate start-server after one thread established connection resulted in "adb server didn't ack"
             sleep(0.1)
