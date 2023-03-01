@@ -14,8 +14,8 @@ import enum
 import glob
 import logging
 import os
-import pathlib
 import shlex
+import subprocess
 import time
 import typing
 from typing import Union
@@ -313,3 +313,19 @@ class Adb:
         self.shell("recovery --wipe_data")
         self.wait_for_state(DeviceState.DEVICE)
         self.wait_for_boot_complete()
+
+    @staticmethod
+    def get_adb_version() -> int:
+        """Read Adb main version.
+
+        Example printout:
+
+            Android Debug Bridge version 1.0.41
+            Version 34.0.0-9570255
+            Installed as /usr/local/bin/adb
+
+        Expected result: 34
+        """
+        output = subprocess.check_output(["adb", "--version"])
+        version = int(output.splitlines()[1].split()[1].partition(b".")[0])
+        return version

@@ -18,6 +18,7 @@ import threading
 import typing
 from datetime import datetime
 from time import sleep
+from coppercomm.device_adb import adb_interface
 
 SUPER_DEBUG_LEVEL = 5
 
@@ -107,6 +108,7 @@ class AdbLoggerThread(threading.Thread):
         self._logger_started_event = threading.Event()
         self._max_adb_hiccups = 10
         self._adb_hiccup_counter = 0
+        self._adb_version = adb_interface.Adb.get_adb_version()
 
     def run(self) -> None:
         try:
@@ -218,7 +220,10 @@ class AdbLoggerThread(threading.Thread):
         with AdbLoggerThread._establishing_connection_lock:
             self._logger.debug("Setup adb connection start")
             self._logged_subprocess_run("start-server", logging_level=SUPER_DEBUG_LEVEL)
-            self._logged_subprocess_run("wait-for-any", logging_level=SUPER_DEBUG_LEVEL)
+            if self._adb_version >= 34:
+                self._logged_subprocess_run("wait-for-device",logging_level=SUPER_DEBUG_LEVEL)
+            else:
+                self._logged_subprocess_run("wait-for-any",logging_level=SUPER_DEBUG_LEVEL)
             self._logged_subprocess_run("root", logging_level=SUPER_DEBUG_LEVEL)
             # immediate start-server after one thread established connection resulted in "adb server didn't ack"
             sleep(0.1)
