@@ -96,6 +96,10 @@ class Config:
         return self.device_config_data["HOST"]["adb_ssh_port"]
 
     @throw_config_error_on_value_missing_in_config
+    def get_host_ip_address(self) -> str:
+        return self.device_config_data["HOST"]["ip"]
+
+    @throw_config_error_on_value_missing_in_config
     def get_host_broadrreach_ethernet_interface_name(self) -> str:
         return self.device_config_data["NETWORK"]["interface"]
 
@@ -143,13 +147,12 @@ def _config_file_from_home_dir(filename: str) -> Path | None:
     return None
 
 
-@functools.lru_cache()
-def load_config(
+def find_config_file(
     path: Path | None = None,
     filename: str = DEFAULT_CONFIG_FILENAME,
     env_variable: str = DEFAULT_CONFIG_ENV_VARIABLE,
-):
-    """Load configuration file from different places.
+) -> Path:
+    """Find configuration file from different places.
 
     Configuraiton file is search by predefined order:
 
@@ -163,6 +166,7 @@ def load_config(
     :param env_variable: Name of the environment variable to use.
     :raise ConfigFileParseError: When config file can't be found.
     """
+
     config_file: Path | None = (
         _config_file_from_variable(env_variable, filename)
         or _config_file_from_path(path, filename)
@@ -172,8 +176,25 @@ def load_config(
 
     if not config_file:
         raise ConfigFileParseError(
-            f"'{filename}' file not found. " f"Either export '{env_variable}' or put file in CWD or HOME folder."
+            f"'{filename}' file not found. Either export '{env_variable}' or put file in CWD or HOME folder."
         )
+
+    return config_file
+
+
+@functools.lru_cache()
+def load_config(
+    path: Path | None = None,
+    filename: str = DEFAULT_CONFIG_FILENAME,
+    env_variable: str = DEFAULT_CONFIG_ENV_VARIABLE,
+):
+    """Load configuration file from different places.
+
+    :param path: Path to config file or directory with config file with given ``filename``.
+    :param filename: Name of the config file to look for in directories.
+    :param env_variable: Name of the environment variable to use.
+    """
+    config_file: Path = find_config_file(path, filename, env_variable)
 
     with config_file.open("r") as fh:
         device_config_data: dict = json.load(fh)
