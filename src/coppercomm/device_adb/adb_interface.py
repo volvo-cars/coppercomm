@@ -242,8 +242,8 @@ class Adb:
         :param local_path: Destination path to store files/directory pulled from the device
         :param timeout: Timeout for the operation to complete
         """
-        self._log("Pulling {} to {}".format(on_device_path, local_path))
-        pull_cmd = "pull {} {}".format(on_device_path, local_path)
+        self._log(f"Pulling {on_device_path} to {local_path}")
+        pull_cmd = f"pull {shlex.quote(on_device_path)} {shlex.quote(local_path)}"
         self.check_output(pull_cmd, timeout=timeout)
 
     def _log(self, msg: str) -> None:
