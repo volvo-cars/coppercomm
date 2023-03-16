@@ -88,6 +88,10 @@ class Config:
         return self.device_config_data["QNX"]["ip"]
 
     @throw_config_error_on_value_missing_in_config
+    def get_qnx_port(self) -> str:
+        return self.device_config_data["QNX"]["port"]
+
+    @throw_config_error_on_value_missing_in_config
     def get_config_version(self) -> str:
         return self.device_config_data.get("version", "1")
 

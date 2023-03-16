@@ -11,7 +11,7 @@
 
 import typing
 
-from coppercomm.config_file_parser import Config, SerialDeviceType, load_config
+from coppercomm.config_file_parser import Config, ConfigFileParseError, SerialDeviceType, load_config
 from coppercomm.device_adb.adb_interface import Adb
 from coppercomm.device_serial.device_serial import SerialConnection
 from coppercomm.ssh_connection.ssh_connection import SSHConnection
@@ -42,7 +42,11 @@ class DeviceFactory:
         return SSHConnection(ip="127.0.0.1", port=local_ssh_port)
 
     def create_broadrreach_ssh(self) -> SSHConnection:
-        return SSHConnection(self.config.get_qnx_ip())
+        try:
+            port = self.config.get_qnx_port()
+        except ConfigFileParseError:
+            port = "22"
+        return SSHConnection(ip=self.config.get_qnx_ip(), port=port)
 
     def create_serial_devices(
         self,
