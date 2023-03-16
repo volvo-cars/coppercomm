@@ -20,7 +20,7 @@ from time import sleep
 from paramiko import Channel, MissingHostKeyPolicy, SFTPClient, SSHException
 from paramiko.channel import ChannelFile, ChannelStderrFile
 from paramiko.client import SSHClient
-from paramiko.ssh_exception import NoValidConnectionsError
+from paramiko.ssh_exception import NoValidConnectionsError, AuthenticationException
 
 
 logger = logging.getLogger("SSHConnection")
@@ -105,7 +105,7 @@ class SSHConnection:
                         else:
                             raise OSError("Can't get transport from ssh client!")
 
-            except (NoValidConnectionsError, OSError, socket.timeout):
+            except (NoValidConnectionsError, AuthenticationException, OSError, socket.timeout):
                 raise SSHConnectionError(f"Failed to connect to {self.ip}:{self.port}")
 
     def disconnect(self) -> None:
