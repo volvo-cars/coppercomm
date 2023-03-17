@@ -59,8 +59,5 @@ class DeviceFactory:
         return SerialConnection(self.config, serial_device_type)
 
     def available_serials(self) -> typing.Sequence[SerialDeviceType]:
-        serials = {
-            "device1": (SerialDeviceType.SupportCPU, SerialDeviceType.QNX),
-            "DHU": (SerialDeviceType.SupportCPU, SerialDeviceType.QNX),
-        }
-        return serials[self.config.get_device_name()]
+        return (SerialDeviceType.SECONDARY_CPU, SerialDeviceType.PRIMARY_CPU)
+
