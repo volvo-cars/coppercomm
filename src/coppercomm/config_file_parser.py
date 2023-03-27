@@ -112,7 +112,7 @@ class Config:
         try:
             if self.device_config_data["OEM"]:
                 return self.device_config_data["OEM"]
-        except:
+        finally:
             return ""
 
 def _config_file_from_variable(env_variable: str, filename: str) -> Path | None:
