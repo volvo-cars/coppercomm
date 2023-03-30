@@ -248,7 +248,7 @@ class SSHConnection:
         raise last_e
 
     def get(self, remotepath: str, localpath: str) -> None:
-        self.connect()
+        self.connect(timeout=10)
         if self.connected:
             transport = self.sshclient.get_transport()
             if transport:
@@ -264,7 +264,7 @@ class SSHConnection:
 
         Note: SFTPClient requires that file name should be included in remote path.
         """
-        self.connect()
+        self.connect(timeout=10)
         if self.connected:
             transport = self.sshclient.get_transport()
             if transport:
@@ -289,7 +289,7 @@ class SSHConnection:
         if source.is_file():
             return self.put(source.as_posix(), remote_dir.joinpath(source.name).as_posix())
 
-        self.connect()
+        self.connect(timeout=10)
         if not self.connected:
             raise SFTPTransferFailed(f"Failed to put {source} to {remote_dir}")
         if not (transport := self.sshclient.get_transport()):
