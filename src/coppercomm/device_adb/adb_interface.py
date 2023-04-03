@@ -179,18 +179,18 @@ class Adb:
     def wait_for_boot_complete(self, timeout: int = 240) -> None:
         """Wait for android to completely boot up.
 
-        Waits for property: dev.bootcomplete == 1
+        Waits for property: sys.boot_completed == 1
         """
-        _logger.debug("Waiting for android property dev.bootcomplete == 1 (timeout %ds)..", timeout)
+        _logger.debug("Waiting for android property sys.boot_completed == 1 (timeout %ds)..", timeout)
 
         monotonic_timeout = time.monotonic() + timeout
 
         while time.monotonic() < monotonic_timeout:
             with contextlib.suppress(CommandFailedError):
-                if self.shell("getprop dev.bootcomplete", log_output=False).strip() == "1":
+                if self.shell("getprop sys.boot_completed", log_output=False).strip() == "1":
                     return
             time.sleep(2)
-        raise Exception(f"Android property 'dev.bootcomplete' != 1 after {timeout}s!")
+        raise Exception(f"Android property 'sys.boot_completed' != 1 after {timeout}s!")
 
     def push(
         self,
