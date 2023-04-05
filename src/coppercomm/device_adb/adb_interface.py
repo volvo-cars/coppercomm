@@ -288,6 +288,11 @@ class Adb:
     def device_id(self):
         return self._adb_device_id
 
+    @device_id.setter
+    def device_id(self, value: str):
+        self._adb_device_id = value
+        self._adb_cmd = ["adb", "-s", value]
+
     def mount_filesytem_as_root(self):
         self.gain_root_permissions()
         self.shell(command="disable-verity", assert_ok=False)
