@@ -249,9 +249,10 @@ class Adb:
     def _log(self, msg: str) -> None:
         _logger.debug("{}: {}".format(self._adb_device_id or "ADB_DEVICE", msg))
 
-    def get_boot_id(self):
-        boot_id = self.shell(f"cat {_kernel_boot_id_path}")
-        _logger.debug(f"Current boot_id: {boot_id}")
+    def get_boot_id(self, log_output=True):
+        boot_id = self.shell(f"cat {_kernel_boot_id_path}", log_output=log_output)
+        if log_output:
+            _logger.debug(f"Current boot_id: {boot_id}")
         return boot_id
 
     def trigger_reboot(self, mode=None):
@@ -273,16 +274,18 @@ class Adb:
         self.gain_root_permissions(timeout=10)
         self.trigger_reboot(mode)
 
+        last_e = None
+        _logger.info(f"Waiting for new android boot_id (timeout %ds)", timeout)
         while datetime.datetime.now() < datetime_timeout:
             try:
                 time.sleep(1)
-                if initial_boot_id != self.get_boot_id():
-                    _logger.info("Kernel boot_id changed. Reboot completed.")
+                if initial_boot_id != (boot_id := self.get_boot_id(log_output=False)):
+                    _logger.info("Kernel boot_id changed to %s. Reboot completed.", boot_id)
                     return
             except AssertionError as e:
-                _logger.debug(f"Failed to read boot_id: {e}")
+                last_e = e
 
-        raise AssertionError(f"Failed to restart over adb")
+        raise AssertionError(f"Failed to restart over adb") from last_e
 
     @property
     def device_id(self):
