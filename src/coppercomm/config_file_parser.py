@@ -38,9 +38,9 @@ def throw_config_error_on_value_missing_in_config(func):
 
 
 class SerialDeviceType(Enum):
-    PRIMARY_CPU = "PRIMARY_CPU"
-    SECONDARY_CPU = "SECONDARY_CPU"
-    TERTIARY_CPU = "TERTIARY_CPU"
+    QNX = "QNX"
+    SupportCPU = "SupportCPU"
+    HKP = "HKP"  # TODO: Should be removed. Use SupportCPU instead.
 
 
 class Config:
@@ -85,11 +85,11 @@ class Config:
 
     @throw_config_error_on_value_missing_in_config
     def get_qnx_ip(self) -> str:
-        return self.device_config_data["MAIN_CPU"]["ip"]
+        return self.device_config_data["QNX"]["ip"]
 
     @throw_config_error_on_value_missing_in_config
     def get_qnx_port(self) -> str:
-        return self.device_config_data["MAIN_CPU"]["port"]
+        return self.device_config_data["QNX"]["port"]
 
     @throw_config_error_on_value_missing_in_config
     def get_config_version(self) -> str:

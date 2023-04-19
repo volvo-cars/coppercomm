@@ -80,15 +80,20 @@ def device_available(adb_connection_state_monitor, ssh_connection_state_monitor)
 
 
 @pytest.fixture(scope="session")
-def main_cpu_serial(device_factory: DeviceFactory) -> SerialConnection | None:
+def qnx_serial(device_factory: DeviceFactory) -> SerialConnection | None:
     try:
-        return device_factory.create_serial(SerialDeviceType.PRIMARY_CPU)
+        return device_factory.create_serial(SerialDeviceType.QNX)
     except:
         return None
 
 @pytest.fixture(scope="session")
 def support_cpu_serial(device_factory: DeviceFactory) -> SerialConnection:
-    return device_factory.create_serial(SerialDeviceType.SECONDARY_CPU)
+    return device_factory.create_serial(SerialDeviceType.SupportCPU)
+
+
+@pytest.fixture(scope="session")
+def hkp_serial(device_factory: DeviceFactory) -> SerialConnection:
+    return device_factory.create_serial(SerialDeviceType.SupportCPU)
 
 
 @pytest.fixture(scope="function")
