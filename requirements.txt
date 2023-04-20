@@ -1,3 +1,0 @@
-paramiko
-pyserial
-pexpect
