@@ -87,8 +87,11 @@ def qnx_serial(device_factory: DeviceFactory) -> SerialConnection | None:
         return None
 
 @pytest.fixture(scope="session")
-def support_cpu_serial(device_factory: DeviceFactory) -> SerialConnection:
-    return device_factory.create_serial(SerialDeviceType.SupportCPU)
+def support_cpu_serial(device_factory: DeviceFactory) -> SerialConnection | None:
+    try:
+        return device_factory.create_serial(SerialDeviceType.SupportCPU)
+    except:
+        return None
 
 
 @pytest.fixture(scope="session")
