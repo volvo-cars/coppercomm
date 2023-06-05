@@ -104,13 +104,12 @@ class Config:
         return self.device_config_data["HOST"]["ip"]
 
     @throw_config_error_on_value_missing_in_config
-    def get_host_broadrreach_ethernet_interface_name(self) -> str:
-        return self.device_config_data["NETWORK"]["interface"]
-
-    @throw_config_error_on_value_missing_in_config
     def get_oem(self) -> str:
         return self.device_config_data["OEM"]
 
+    @throw_config_error_on_value_missing_in_config
+    def get_network_configuraiton_data(self) -> dict:
+        return self.device_config_data["NETWORK"]
 
 def _config_file_from_variable(env_variable: str, filename: str) -> Path | None:
     if device_config_file_variable := os.getenv(env_variable):
