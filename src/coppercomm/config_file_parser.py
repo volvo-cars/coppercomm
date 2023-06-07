@@ -16,6 +16,7 @@ import logging
 import os
 from enum import Enum
 from pathlib import Path
+from typing import List, Optional, Union
 
 DEFAULT_CONFIG_ENV_VARIABLE = "DEVICE_CONFIG_FILE"
 DEFAULT_CONFIG_FILENAME = "device_config.json"
@@ -53,7 +54,7 @@ class Config:
     def get_serial_device_path(self, serial_device: SerialDeviceType) -> str:
         return self.device_config_data[serial_device.value]["tty"]
 
-    def get_serial_prompt(self, serial_device: SerialDeviceType) -> str | list[str]:
+    def get_serial_prompt(self, serial_device: SerialDeviceType) -> Union[str, List[str]]:
         return ""
 
     @throw_config_error_on_value_missing_in_config
@@ -61,7 +62,7 @@ class Config:
         return self.device_config_data["ADB"]["adb_device_id"]
 
     @throw_config_error_on_value_missing_in_config
-    def get_extra_devices_ids(self) -> list[str]:
+    def get_extra_devices_ids(self) -> List[str]:
         """Get the list with extra devices ids."""
         return [device["ADB_DEVICE_ID"] for device in self.device_config_data["EXTRA_DEVICES"]]
 
@@ -74,12 +75,12 @@ class Config:
         return self.device_config_data["PRODUCT_NAME"]
 
     @throw_config_error_on_value_missing_in_config
-    def get_extra_devices_product_names(self) -> list[str]:
+    def get_extra_devices_product_names(self) -> List[str]:
         """Get the list with extra devices product names."""
         return [device["PRODUCT_NAME"] for device in self.device_config_data["EXTRA_DEVICES"]]
 
     @throw_config_error_on_value_missing_in_config
-    def get_extra_devices_types(self) -> list[str]:
+    def get_extra_devices_types(self) -> List[str]:
         """Get the list with extra devices types."""
         return [device["TYPE"] for device in self.device_config_data["EXTRA_DEVICES"]]
 
@@ -111,7 +112,7 @@ class Config:
     def get_network_configuraiton_data(self) -> dict:
         return self.device_config_data["NETWORK"]
 
-def _config_file_from_variable(env_variable: str, filename: str) -> Path | None:
+def _config_file_from_variable(env_variable: str, filename: str) -> Optional[Path]:
     if device_config_file_variable := os.getenv(env_variable):
         _logger.debug("Trying config file from env var %s", env_variable)
         device_config_path = Path(device_config_file_variable).expanduser()
@@ -124,7 +125,7 @@ def _config_file_from_variable(env_variable: str, filename: str) -> Path | None:
     return None
 
 
-def _config_file_from_path(path: Path | None, filename: str) -> Path | None:
+def _config_file_from_path(path: Optional[Path], filename: str) -> Optional[Path]:
     if path is None:
         return None
     path = path.expanduser()
@@ -138,7 +139,7 @@ def _config_file_from_path(path: Path | None, filename: str) -> Path | None:
     return None
 
 
-def _config_file_from_cwd(filename: str) -> Path | None:
+def _config_file_from_cwd(filename: str) -> Optional[Path]:
     file_path = Path.cwd() / filename
     _logger.debug("Trying config file from CWD: %s", file_path)
     if file_path.is_file():
@@ -146,7 +147,7 @@ def _config_file_from_cwd(filename: str) -> Path | None:
     return None
 
 
-def _config_file_from_home_dir(filename: str) -> Path | None:
+def _config_file_from_home_dir(filename: str) -> Optional[Path]:
     device_config_path = Path.home() / filename
     _logger.debug("Trying config file from HOME: %s", device_config_path)
     if device_config_path.is_file():
@@ -155,7 +156,7 @@ def _config_file_from_home_dir(filename: str) -> Path | None:
 
 
 def find_config_file(
-    path: Path | None = None,
+    path: Optional[Path] = None,
     filename: str = DEFAULT_CONFIG_FILENAME,
     env_variable: str = DEFAULT_CONFIG_ENV_VARIABLE,
 ) -> Path:
@@ -174,7 +175,7 @@ def find_config_file(
     :raise ConfigFileParseError: When config file can't be found.
     """
 
-    config_file: Path | None = (
+    config_file: Optional[Path] = (
         _config_file_from_variable(env_variable, filename)
         or _config_file_from_path(path, filename)
         or _config_file_from_cwd(filename)
@@ -191,7 +192,7 @@ def find_config_file(
 
 @functools.lru_cache()
 def load_config(
-    path: Path | None = None,
+    path: Optional[Path] = None,
     filename: str = DEFAULT_CONFIG_FILENAME,
     env_variable: str = DEFAULT_CONFIG_ENV_VARIABLE,
 ):

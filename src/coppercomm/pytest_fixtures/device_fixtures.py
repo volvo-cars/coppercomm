@@ -24,6 +24,7 @@ def test_ping_android_dev_interface(qnx_serial_device):
 """
 
 import pytest
+import typing
 
 from coppercomm.config_file_parser import Config, SerialDeviceType
 from coppercomm.device_adb.adb_interface import Adb
@@ -43,7 +44,7 @@ def adb(device_factory: DeviceFactory) -> Adb:
 
 
 @pytest.fixture(scope="session")
-def adb_phone(device_factory: DeviceFactory) -> list[Adb]:
+def adb_phone(device_factory: DeviceFactory) -> typing.List[Adb]:
     """This fixture will return list with adb interface for each extra device."""
     return device_factory.create_phone_adb()
 
@@ -54,7 +55,7 @@ def qnx_ssh_over_adb(device_factory: DeviceFactory, adb: Adb) -> SSHConnection:
 
 
 @pytest.fixture(scope="session")
-def qnx_broadrreach_ssh(device_factory: DeviceFactory) -> SSHConnection | None:
+def qnx_broadrreach_ssh(device_factory: DeviceFactory) -> typing.Optional[SSHConnection]:
     try:
         return device_factory.create_broadrreach_ssh()
     except:
@@ -80,14 +81,14 @@ def device_available(adb_connection_state_monitor, ssh_connection_state_monitor)
 
 
 @pytest.fixture(scope="session")
-def qnx_serial(device_factory: DeviceFactory) -> SerialConnection | None:
+def qnx_serial(device_factory: DeviceFactory) -> typing.Optional[SerialConnection]:
     try:
         return device_factory.create_serial(SerialDeviceType.QNX)
     except:
         return None
 
 @pytest.fixture(scope="session")
-def support_cpu_serial(device_factory: DeviceFactory) -> SerialConnection | None:
+def support_cpu_serial(device_factory: DeviceFactory) -> typing.Optional[SerialConnection]:
     try:
         return device_factory.create_serial(SerialDeviceType.SupportCPU)
     except:

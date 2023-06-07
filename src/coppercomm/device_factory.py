@@ -29,7 +29,7 @@ class DeviceFactory:
     def create_adb(self) -> Adb:
         return Adb(self.config.get_adb_device_id())
 
-    def create_phone_adb(self) -> list[Adb]:
+    def create_phone_adb(self) -> typing.List[Adb]:
         return [Adb(device_id) for device_id in self.config.get_extra_devices_ids()]
 
     def create_ssh_over_adb(self, adb: Adb) -> SSHConnection:
