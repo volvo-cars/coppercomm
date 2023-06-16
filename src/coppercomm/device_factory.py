@@ -10,6 +10,7 @@
 # limitations under the License.
 
 import typing
+from pathlib import Path
 
 from coppercomm.config_file_parser import Config, ConfigFileParseError, SerialDeviceType, load_config
 from coppercomm.device_adb.adb_interface import Adb
@@ -24,7 +25,9 @@ class DeviceResourceUnavailableError(AssertionError):
 
 class DeviceFactory:
     def __init__(self):
-        self.config: Config = load_config()
+        config, config_file = load_config()
+        self.config: Config = config
+        self.config_file: Path = config_file
 
     def create_adb(self) -> Adb:
         return Adb(self.config.get_adb_device_id())

@@ -16,7 +16,7 @@ import logging
 import os
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import List, Optional, Tuple, Union
 
 DEFAULT_CONFIG_ENV_VARIABLE = "DEVICE_CONFIG_FILE"
 DEFAULT_CONFIG_FILENAME = "device_config.json"
@@ -176,8 +176,8 @@ def find_config_file(
     """
 
     config_file: Optional[Path] = (
-        _config_file_from_variable(env_variable, filename)
-        or _config_file_from_path(path, filename)
+        _config_file_from_path(path, filename)
+        or _config_file_from_variable(env_variable, filename)
         or _config_file_from_cwd(filename)
         or _config_file_from_home_dir(filename)
     )
@@ -195,16 +195,17 @@ def load_config(
     path: Optional[Path] = None,
     filename: str = DEFAULT_CONFIG_FILENAME,
     env_variable: str = DEFAULT_CONFIG_ENV_VARIABLE,
-):
+) -> Tuple[Config, Path]:
     """Load configuration file from different places.
 
     :param path: Path to config file or directory with config file with given ``filename``.
     :param filename: Name of the config file to look for in directories.
     :param env_variable: Name of the environment variable to use.
+    :return: Config instance, path to source file
     """
     config_file: Path = find_config_file(path, filename, env_variable)
 
     with config_file.open("r") as fh:
         device_config_data: dict = json.load(fh)
 
-    return Config(device_config_data)
+    return Config(device_config_data), config_file
