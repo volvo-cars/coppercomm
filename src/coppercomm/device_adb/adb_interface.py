@@ -172,6 +172,23 @@ class Adb:
         """
         return self.check_output("kill-server", log_output=log_output)
 
+    def start_server(self, log_output: bool = True) -> str:
+        """Start adb server.
+
+        :param log_output: whether to print logs.
+        :return: Commands stdout
+        """
+        return self.check_output("start-server", log_output=log_output)
+
+    def restart_server(self, log_output: bool = True):
+        """Restart adb server.
+
+        :param log_output: whether to print logs.
+        """
+        self.kill_server(log_output)
+        self.start_server(log_output)
+
+
     def wait_for_state(
         self,
         state: typing.Union[str, DeviceState] = DeviceState.DEVICE,
@@ -189,11 +206,10 @@ class Adb:
 
         cur_state = None
         while time.monotonic() < monotonic_timeout:
-            with contextlib.suppress(CommandFailedError):
+            with contextlib.suppress(CommandFailedError, ValueError):
                 output = self.check_output("get-state", log_output=False, assert_ok=False).strip()
                 if "device unauthorized" in output:
-                    self.kill_server(log_output=False)
-                    time.sleep(2)
+                    self.restart_server(log_output=False)
                 elif (cur_state := DeviceState(output)) == expected_state:
                     self._log("Device in {} state".format(expected_state))
                     return
@@ -213,8 +229,7 @@ class Adb:
             with contextlib.suppress(CommandFailedError):
                 output = self.shell("getprop sys.boot_completed", log_output=False, assert_ok=False).strip()
                 if "device unauthorized" in output:
-                    self.kill_server(log_output=False)
-                    time.sleep(2)
+                    self.restart_server(log_output=False)
                 elif output == "1":
                     return
             time.sleep(2)
