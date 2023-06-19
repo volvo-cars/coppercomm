@@ -109,6 +109,10 @@ class Adb:
             command, shell=True, assert_ok=assert_ok, regrep=regrep, timeout=timeout, log_output=log_output
         )
 
+    def is_root_accessible(self) -> bool:
+        """Verify the device's capability to acquire root privileges."""
+        return True if self.shell("getprop ro.build.type").strip() == "userdebug" else False
+
     def gain_root_permissions(self, *, timeout: float = 60.0, retries: int = 3) -> None:
         """
         Gain root permissions (adb root). Wait for device in current state after
