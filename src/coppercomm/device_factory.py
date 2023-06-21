@@ -24,8 +24,8 @@ class DeviceResourceUnavailableError(AssertionError):
 
 
 class DeviceFactory:
-    def __init__(self):
-        config, config_file = load_config()
+    def __init__(self, device_config: typing.Optional[Path] = None):
+        config, config_file = load_config(device_config)
         self.config: Config = config
         self.config_file: Path = config_file
 

@@ -25,6 +25,7 @@ def test_ping_android_dev_interface(qnx_serial_device):
 
 import pytest
 import typing
+from pathlib import Path
 
 from coppercomm.config_file_parser import Config, SerialDeviceType
 from coppercomm.device_adb.adb_interface import Adb
@@ -34,8 +35,8 @@ from coppercomm.ssh_connection.ssh_connection import SSHConnection
 
 
 @pytest.fixture(scope="session")
-def device_factory(create_device_config) -> DeviceFactory:
-    return DeviceFactory()
+def device_factory(create_device_config: Path) -> DeviceFactory:
+    return DeviceFactory(create_device_config)
 
 
 @pytest.fixture(scope="session")
