@@ -346,11 +346,12 @@ class Adb:
 
         if out != "remount succeeded":
             self.reboot_and_wait()
+            self.wait_for_boot_complete()
             self.gain_root_permissions()
             out = self.shell(command="remount", assert_ok=False).strip()
 
             if out != "remount succeeded":
-                raise RemountError("Failed to mount filesystem as root: {}".format(out))
+                raise RemountError(f"Failed to mount filesystem as root: {out}")
 
     def perform_factory_reset(self):
         """Perform factory reset by wiping data in recovery mode.
