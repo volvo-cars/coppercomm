@@ -36,6 +36,7 @@ class DeviceState(enum.Enum):
     DEVICE = "device"
     RECOVERY = "recovery"
     OFFLINE = "offline"
+    UNAUTHORIZED = "unauthorized"
 
 
 class Adb:
@@ -153,15 +154,19 @@ class Adb:
 
         raise CommandFailedError("Gaining root permissions failed") from last_exc
 
-    def get_state(self, assert_ok=True) -> DeviceState:
+    def get_state(self) -> DeviceState:
         """
         Get current device state
 
         :returns: Current DeviceState (DeviceState.DEVICE/DeviceState.RECOVERY)
         """
-        current_state = self.check_output(
-            "get-state", shell=False, assert_ok=assert_ok, timeout=3
-        )
+        current_state = self.check_output("get-state", shell=False, timeout=3, assert_ok=False, log_output=False)
+        if "unauthorized" in current_state:
+            return DeviceState.UNAUTHORIZED
+        if "not found" in current_state:
+            return DeviceState.OFFLINE
+        if "daemon not running; starting" in current_state:
+            current_state = self.check_output("get-state", shell=False, timeout=3, assert_ok=False, log_output=False)
         return DeviceState(current_state.strip())
 
     def kill_server(self, log_output: bool = True) -> str:
@@ -207,10 +212,10 @@ class Adb:
         cur_state = None
         while time.monotonic() < monotonic_timeout:
             with contextlib.suppress(CommandFailedError, ValueError):
-                output = self.check_output("get-state", log_output=False, assert_ok=False).strip()
-                if "device unauthorized" in output:
+                cur_state = self.get_state()
+                if cur_state == DeviceState.UNAUTHORIZED:
                     self.restart_server(log_output=False)
-                elif (cur_state := DeviceState(output)) == expected_state:
+                elif cur_state == expected_state:
                     self._log("Device in {} state".format(expected_state))
                     return
             time.sleep(2)
