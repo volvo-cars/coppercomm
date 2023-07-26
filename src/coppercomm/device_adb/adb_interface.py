@@ -160,13 +160,13 @@ class Adb:
 
         :returns: Current DeviceState (DeviceState.DEVICE/DeviceState.RECOVERY)
         """
-        current_state = self.check_output("get-state", shell=False, timeout=3, assert_ok=False, log_output=False)
+        current_state = self.check_output("get-state", shell=False, timeout=5, assert_ok=False, log_output=False)
+        if "daemon not running; starting" in current_state:
+            current_state = self.check_output("get-state", shell=False, timeout=5, assert_ok=False, log_output=False)
         if "unauthorized" in current_state:
             return DeviceState.UNAUTHORIZED
-        if "not found" in current_state:
+        if "not found" in current_state or "no devices/emulators found" in current_state:
             return DeviceState.OFFLINE
-        if "daemon not running; starting" in current_state:
-            current_state = self.check_output("get-state", shell=False, timeout=3, assert_ok=False, log_output=False)
         return DeviceState(current_state.strip())
 
     def kill_server(self, log_output: bool = True) -> str:
