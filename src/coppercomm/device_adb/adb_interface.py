@@ -114,45 +114,54 @@ class Adb:
         """Check the build type of the device. If userdebug return True, otherwise False."""
         return True if self.shell("getprop ro.build.type").strip() == "userdebug" else False
 
-    def gain_root_permissions(self, *, timeout: float = 60.0, retries: int = 3) -> None:
+    def _change_root_permissions(self, *, timeout: float, retries: int, root: bool) -> None:
+        requested_user = "root" if root else "shell"
+        command = "root" if root else "unroot"
+        self._log(f"Restarting ADB in $requested_user user mode...")
+        current_state = self.get_state()
+        is_nothing_to_do = self.shell("whoami").strip() == requested_user
+        if is_nothing_to_do:
+            self._log("Already running as $requested_user, no need to do anything")
+            return
+
+        self.check_output(command, shell=False, assert_ok=False)
+        # Give some time for device to go offline
+        time.sleep(0.25)
+        # Wait for device to come back again on ADB
+        self.wait_for_state(current_state, timeout=timeout)
+        # Ensure right user and ADB commands working after devices comes back online
+        for attempt in range(1, retries + 1):
+            try:
+                new_user = self.shell("whoami").strip()
+                if new_user != requested_user:
+                    raise CommandFailedError("Switching ADB to $requested_user user failed: got $new_user instead")
+                return
+            except AssertionError as exc:
+                self._log("User verification attempt $attempt failed: $exc")
+                time.sleep(1)
+        raise CommandFailedError("Switching ADB to $requested_user failed: device has not become usable")
+
+    def gain_root_permissions(self, *, timeout: float = 10.0, retries: int = 3) -> None:
         """
-        Gain root permissions (adb root). Wait for device in current state after
-        requesting for root permissions
+        Gain root permissions (adb root). Make sure device is ready to accept ADB commands after.
 
         :param timeout: Timeout for device to be available in current state AFTER requesting
             for root permissions
         :param retries: Retries for 'root' command - the command may failed sometimes, but passes
             after retried
         """
-        self._log("Gaining ADB root permissions...")
-        current_state = self.get_state()
+        self._change_root_permissions(timeout=timeout, retries=retries, root=True)
 
-        is_already_root = self.shell("whoami").strip() == "root"
-        if is_already_root:
-            self._log("User is already root, no need to gain permissions")
-            return
+    def remove_root_permissions(self, *, timeout: float = 10.0, retries: int = 3):
+        """
+        Remove root permissions (adb unroot). Make sure device is ready to accept ADB commands after.
 
-        # hard to get rid of retries :/
-        # it's far more robust this way
-        last_exc = None
-        for attempt in range(1, retries + 1):
-            try:
-                # time needed for 'root' cmd vary and hard to say if 10s is enough so 20s is set to be sure
-                self.check_output("root", shell=False, assert_ok=True, timeout=20)
-            except AssertionError as exc:
-                self._log(
-                    "Gaining root permissions attempt {} failed: {}".format(
-                        attempt, exc
-                    )
-                )
-                time.sleep(3)
-                last_exc = exc
-            else:
-                # Device may be unavailable for some time after 'adb root' command
-                self.wait_for_state(current_state, timeout=10)
-                return
-
-        raise CommandFailedError("Gaining root permissions failed") from last_exc
+        :param timeout: Timeout for device to be available in current state AFTER requesting
+            for root permissions
+        :param retries: Retries for 'root' command - the command may failed sometimes, but passes
+            after retried
+        """
+        self._change_root_permissions(timeout=timeout, retries=retries, root=False)
 
     def get_state(self) -> DeviceState:
         """
@@ -165,7 +174,9 @@ class Adb:
             current_state = self.check_output("get-state", shell=False, timeout=5, assert_ok=False, log_output=False)
         if "unauthorized" in current_state:
             return DeviceState.UNAUTHORIZED
-        if "not found" in current_state or "no devices/emulators found" in current_state:
+        if "not found" in current_state or \
+                "no devices/emulators found" in current_state or \
+                "device offline" in current_state:
             return DeviceState.OFFLINE
         return DeviceState(current_state.strip())
 
