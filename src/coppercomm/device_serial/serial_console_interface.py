@@ -67,7 +67,7 @@ class SerialConsoleInterface(threading.Thread):
         """
         self.logger = logging.getLogger(__name__)
         file_handler = logging.FileHandler(filename=path, mode="a", encoding=None, delay=False)
-        formatter = logging.Formatter('%(levelname)s - %(message)s')
+        formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
         file_handler.setFormatter(formatter)
         file_handler.setLevel(logging.DEBUG)
         for old_handler in self.logger.handlers:
