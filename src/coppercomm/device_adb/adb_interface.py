@@ -117,11 +117,11 @@ class Adb:
     def _change_root_permissions(self, *, timeout: float, retries: int, root: bool) -> None:
         requested_user = "root" if root else "shell"
         command = "root" if root else "unroot"
-        self._log(f"Restarting ADB in $requested_user user mode...")
+        self._log(f"Restarting ADB in {requested_user} user mode...")
         current_state = self.get_state()
         is_nothing_to_do = self.shell("whoami").strip() == requested_user
         if is_nothing_to_do:
-            self._log("Already running as $requested_user, no need to do anything")
+            self._log(f"Already running as {requested_user}, no need to do anything")
             return
 
         self.check_output(command, shell=False, assert_ok=False)
@@ -134,12 +134,12 @@ class Adb:
             try:
                 new_user = self.shell("whoami").strip()
                 if new_user != requested_user:
-                    raise CommandFailedError("Switching ADB to $requested_user user failed: got $new_user instead")
+                    raise CommandFailedError(f"Switching ADB to {requested_user} user failed: got {new_user} instead")
                 return
             except AssertionError as exc:
-                self._log("User verification attempt $attempt failed: $exc")
+                self._log(f"User verification attempt {attempt} failed: {exc}")
                 time.sleep(1)
-        raise CommandFailedError("Switching ADB to $requested_user failed: device has not become usable")
+        raise CommandFailedError(f"Switching ADB to {requested_user} failed.")
 
     def gain_root_permissions(self, *, timeout: float = 10.0, retries: int = 3) -> None:
         """
