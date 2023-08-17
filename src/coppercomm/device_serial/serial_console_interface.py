@@ -115,7 +115,8 @@ class SerialConsoleInterface(threading.Thread):
 
     def close_console(self) -> None:
         self._running.clear()
-        self.join()
+        if self.is_alive():
+            self.join()
         self._close_connection()
         self.logger.debug("Console closed")
 
