@@ -22,7 +22,7 @@ def test_config_file_from_variable_1(getenv_m, path_class_m):
 
 @patch("coppercomm.config_file_parser.Path")
 @patch("os.getenv")
-def test_config_file_from_variable_1(getenv_m, path_class_m):
+def test_config_file_from_variable_2(getenv_m, path_class_m):
     """When variable is a path to a file."""
     some_str_p = getenv_m.return_value
     device_config_path = path_class_m.return_value.expanduser.return_value
@@ -39,11 +39,11 @@ def test_load_config_1(jsload_m, from_variable_m):
     """When loading from env_var"""
     config_file_path: Mock = from_variable_m.return_value
 
-
-    config = config_file_parser.load_config.__wrapped__(env_variable=sentinel.my_variable)
+    config, config_path = config_file_parser.load_config.__wrapped__(env_variable=sentinel.my_variable)
 
     assert isinstance(config, config_file_parser.Config) is True
     assert config.device_config_data is jsload_m.return_value
+    assert config_path == config_file_path
 
     from_variable_m.assert_called_once_with(sentinel.my_variable, config_file_parser.DEFAULT_CONFIG_FILENAME)
     jsload_m.assert_called_once_with(config_file_path.open.return_value.__enter__.return_value)
@@ -59,10 +59,11 @@ def test_load_config_2(jsload_m, from_variable_m, from_path_m):
     my_path = from_path_m.return_value = MagicMock(name="myPath")
 
 
-    config = config_file_parser.load_config.__wrapped__(my_path, sentinel.my_name)
+    config, config_path = config_file_parser.load_config.__wrapped__(my_path, sentinel.my_name)
 
     assert isinstance(config, config_file_parser.Config) is True
     assert config.device_config_data is jsload_m.return_value
+    assert config_path == my_path
 
     jsload_m.assert_called_once_with(my_path.open.return_value.__enter__.return_value)
     my_path.open.assert_called_once_with("r")
@@ -79,10 +80,11 @@ def test_load_config_3(jsload_m, from_variable_m, from_path_m, from_cwd_m):
     from_path_m.return_value = None
     my_path = from_cwd_m.return_value
 
-    config = config_file_parser.load_config.__wrapped__(my_path, sentinel.my_name)
+    config, config_path = config_file_parser.load_config.__wrapped__(my_path, sentinel.my_name)
 
     assert isinstance(config, config_file_parser.Config) is True
     assert config.device_config_data is jsload_m.return_value
+    assert config_path == my_path
 
     jsload_m.assert_called_once_with(my_path.open.return_value.__enter__.return_value)
     my_path.open.assert_called_once_with("r")
@@ -101,10 +103,11 @@ def test_load_config_4(jsload_m, from_variable_m, from_path_m, from_cwd_m, from_
     from_cwd_m.return_value = None
     my_path = from_home_m.return_value
 
-    config = config_file_parser.load_config.__wrapped__(my_path, sentinel.my_name)
+    config, config_path = config_file_parser.load_config.__wrapped__(my_path, sentinel.my_name)
 
     assert isinstance(config, config_file_parser.Config) is True
     assert config.device_config_data is jsload_m.return_value
+    assert config_path == my_path
 
     jsload_m.assert_called_once_with(my_path.open.return_value.__enter__.return_value)
     my_path.open.assert_called_once_with("r")
