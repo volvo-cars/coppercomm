@@ -82,22 +82,37 @@ class SSHConnection:
             self.password = password
             self.sshclient.set_missing_host_key_policy(IgnoreHostKeys())
 
+    def _wait_for_connection(self, timeout: float = 30, retry_delay: float=2.0, tcp_timeout: float=5.0):
+        """Retry connection attempt until it is successfull or timeout occures."""
+        end_time = time.monotonic() + timeout
+
+        while time.monotonic() < end_time:
+            try:
+                self.sshclient.connect(
+                        hostname=self.ip,
+                        port=self.port,
+                        username=self.username,
+                        password=self.password,
+                        timeout=tcp_timeout,
+                        banner_timeout=60,
+                    )
+                if self.connected:
+                    return
+            except (NoValidConnectionsError, AuthenticationException, OSError, socket.timeout) as err:
+                time.sleep(retry_delay)
+                last_e = err
+        raise last_e
+
     def connect(
         self,
-        timeout: typing.Optional[int] = None,
+        timeout: typing.Optional[int] = 30,
+        tcp_timeout: typing.Optional[int] = 5,
         keepalive_interval: typing.Optional[int] = 5,
     ) -> None:
         if not self.connected:
             try:
                 with SSHConnection._ssh_mutex:
-                    self.sshclient.connect(
-                        hostname=self.ip,
-                        port=self.port,
-                        username=self.username,
-                        password=self.password,
-                        timeout=timeout,
-                        banner_timeout=60,
-                    )
+                    self._wait_for_connection(timeout=timeout, tcp_timeout=tcp_timeout)
                     if keepalive_interval is not None:
                         transport = self.sshclient.get_transport()
                         if transport:
@@ -190,6 +205,7 @@ class SSHConnection:
         command_exec_timeout: typing.Optional[int] = 10,
         tries=1,
         open_channel_timeout: int = 10,
+        connect_timeout: float = 30.0
     ) -> typing.Tuple[
         ChannelFile,
         ChannelStderrFile,
@@ -199,7 +215,7 @@ class SSHConnection:
             raise ValueError("Number of 'tries' must be >= 1")
         for _ in range(tries):
             try:
-                self.connect()
+                self.connect(timeout=connect_timeout)
                 return self._execute_cmd(
                     command,
                     handle_return_code,
@@ -232,12 +248,13 @@ class SSHConnection:
         self,
         command: str,
         tries=1,
+        connect_timeout: float = 30.0
     ) -> typing.Tuple[Channel, ChannelFile, ChannelStderrFile, typing.Optional[int]]:
         if tries < 1:
             raise ValueError("Number of 'tries' must be >= 1")
         for _ in range(tries):
             try:
-                self.connect()
+                self.connect(timeout=connect_timeout)
                 return self._execute_cmd_pty(
                     command,
                 )
@@ -248,7 +265,7 @@ class SSHConnection:
         raise last_e
 
     def get(self, remotepath: str, localpath: str) -> None:
-        self.connect(timeout=10)
+        self.connect(tcp_timeout=10)
         if self.connected:
             transport = self.sshclient.get_transport()
             if transport:
@@ -264,7 +281,7 @@ class SSHConnection:
 
         Note: SFTPClient requires that file name should be included in remote path.
         """
-        self.connect(timeout=10)
+        self.connect(tcp_timeout=10)
         if self.connected:
             transport = self.sshclient.get_transport()
             if transport:
@@ -289,7 +306,7 @@ class SSHConnection:
         if source.is_file():
             return self.put(source.as_posix(), remote_dir.joinpath(source.name).as_posix())
 
-        self.connect(timeout=10)
+        self.connect(tcp_timeout=10)
         if not self.connected:
             raise SFTPTransferFailed(f"Failed to put {source} to {remote_dir}")
         if not (transport := self.sshclient.get_transport()):
