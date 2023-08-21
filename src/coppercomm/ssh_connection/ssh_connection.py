@@ -105,9 +105,9 @@ class SSHConnection:
 
     def connect(
         self,
-        timeout: typing.Optional[int] = 30,
-        tcp_timeout: typing.Optional[int] = 5,
-        keepalive_interval: typing.Optional[int] = 5,
+        timeout: float = 30.0,
+        tcp_timeout: float = 5.0,
+        keepalive_interval: int = 5,
     ) -> None:
         if not self.connected:
             try:
