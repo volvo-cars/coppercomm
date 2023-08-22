@@ -10,10 +10,9 @@
 # limitations under the License.
 
 from datetime import datetime, timedelta
-from typing import List, Union
+from typing import List, Union, Pattern, Iterable
 from pexpect import TIMEOUT, EOF
 from pexpect.fdpexpect import fdspawn
-from typing.re import Pattern  # type: ignore
 import subprocess
 import threading
 import logging
@@ -133,7 +132,7 @@ class SerialConsoleInterface(threading.Thread):
         try:
             found = self._expect(
                 expected,
-                not_expected=not_expected,
+                not_expected_in_output=not_expected,
                 timeout=timeout,
                 wait_for_prompt=False,
             )
@@ -179,7 +178,7 @@ class SerialConsoleInterface(threading.Thread):
             if expected_in_output or not_expected or wait_for_prompt:
                 found = self._expect(
                     expected_in_output=expected_in_output,
-                    not_expected=not_expected,
+                    not_expected_in_output=not_expected,
                     timeout=timeout,
                     wait_for_prompt=wait_for_prompt,
                     prompt=prompt,
@@ -323,26 +322,26 @@ class SerialConsoleInterface(threading.Thread):
     def _expect(
         self,
         expected_in_output: Union[str, List[str]],
-        not_expected: Union[str, List[str]],
+        not_expected_in_output: Union[str, List[str]],
         timeout: float = 0,
         wait_for_prompt: bool = True,
         prompt: Union[str, List[str], None] = None,
     ) -> int:
         self.logger.debug(
             "Expecting <{}> while <{}> is NOT expected. Prompt: {}, Timeout: {}".format(
-                expected_in_output, not_expected, wait_for_prompt, timeout
+                expected_in_output, not_expected_in_output, wait_for_prompt, timeout
             )
         )
-        expected = (
+        expected_not_compiled = (
             expected_in_output
             if isinstance(expected_in_output, list)
             else [expected_in_output]
         )
-        not_expected = (
-            not_expected if isinstance(not_expected, list) else [not_expected]
+        not_expected_not_compiled = (
+            not_expected_in_output if isinstance(not_expected_in_output, list) else [not_expected_in_output]
         )
-        expected = self._compile_pattern_list(expected)
-        not_expected = self._compile_pattern_list(not_expected)
+        expected = self._compile_pattern_list(expected_not_compiled)
+        not_expected = self._compile_pattern_list(not_expected_not_compiled)
         if not (expected or not_expected or wait_for_prompt):
             raise ValueError(
                 "Either 'expected' or 'not_expected' value should be given while wait_for_prompt is disabled"
@@ -420,7 +419,7 @@ class SerialConsoleInterface(threading.Thread):
             return "|".join([x if x.startswith("\\") else re.escape(x) for x in prompt])
 
     def _compile_pattern_list(
-        self, patterns: List[Union[Pattern, TIMEOUT, str]]
+        self, patterns: Iterable[Union[Pattern, TIMEOUT, str]]
     ) -> List[Union[Pattern, TIMEOUT]]:
         compiled_pattern_list = []
         for pattern in patterns:
