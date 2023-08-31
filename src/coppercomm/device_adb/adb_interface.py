@@ -21,7 +21,7 @@ import typing
 from typing import Union
 import datetime
 
-from coppercomm.device_common.exceptions import RemountError, CommandFailedError
+from coppercomm.device_common.exceptions import RemountError, CommandFailedError, CopperCommmError
 from coppercomm.device_common.local_console import execute_command
 
 
@@ -172,6 +172,10 @@ class Adb:
         current_state = self.check_output("get-state", shell=False, timeout=5, assert_ok=False, log_output=False)
         if "daemon not running; starting" in current_state:
             current_state = self.check_output("get-state", shell=False, timeout=5, assert_ok=False, log_output=False)
+        if "more than one" in current_state:
+            raise CopperCommmError(
+                "More than one ADB device is connected. 'adb_device_id' must be specified to read device state!"
+            )
         if "unauthorized" in current_state:
             return DeviceState.UNAUTHORIZED
         if "not found" in current_state or \
