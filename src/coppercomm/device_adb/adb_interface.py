@@ -334,7 +334,6 @@ class Adb:
 
         datetime_timeout = datetime.datetime.now() + datetime.timedelta(seconds=timeout)
 
-        self.gain_root_permissions(timeout=10)
         self.trigger_reboot(mode)
 
         last_e = None
