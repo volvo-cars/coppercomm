@@ -198,6 +198,10 @@ class Adb:
         :param log_output: whether to print logs.
         :return: Commands stdout
         """
+        with contextlib.suppress(CommandFailedError):
+            return self.check_output("start-server", log_output=log_output)
+        # This helps in case of "connection reset by peer" error
+        time.sleep(2)
         return self.check_output("start-server", log_output=log_output)
 
     def restart_server(self, log_output: bool = True):
@@ -206,8 +210,15 @@ class Adb:
         :param log_output: whether to print logs.
         """
         self.kill_server(log_output)
-        self.start_server(log_output)
 
+        # Wait until ADB port is released to prevent
+        # Connection reset by peer error
+        res = subprocess.check_output(["ss", "-tl"])
+        while b"127.0.0.1:5037" in res:
+            time.sleep(0.001)
+            res = subprocess.check_output(["ss", "-tl"])
+
+        self.start_server(log_output)
 
     def wait_for_state(
         self,
