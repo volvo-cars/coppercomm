@@ -16,12 +16,13 @@ import time
 import typing
 from pathlib import Path
 from time import sleep
+import fnmatch
 
 from paramiko import Channel, MissingHostKeyPolicy, SFTPClient, SSHException
 from paramiko.channel import ChannelFile, ChannelStderrFile
 from paramiko.client import SSHClient
-from paramiko.ssh_exception import NoValidConnectionsError, AuthenticationException
-
+from paramiko.ssh_exception import (AuthenticationException,
+                                    NoValidConnectionsError)
 
 logger = logging.getLogger("SSHConnection")
 
@@ -82,23 +83,30 @@ class SSHConnection:
             self.password = password
             self.sshclient.set_missing_host_key_policy(IgnoreHostKeys())
 
-    def _wait_for_connection(self, timeout: float = 30, retry_delay: float=2.0, tcp_timeout: float=5.0):
+    def _wait_for_connection(
+        self, timeout: float = 30, retry_delay: float = 2.0, tcp_timeout: float = 5.0
+    ):
         """Retry connection attempt until it is successfull or timeout occures."""
         end_time = time.monotonic() + timeout
 
         while time.monotonic() < end_time:
             try:
                 self.sshclient.connect(
-                        hostname=self.ip,
-                        port=self.port,
-                        username=self.username,
-                        password=self.password,
-                        timeout=tcp_timeout,
-                        banner_timeout=60,
-                    )
+                    hostname=self.ip,
+                    port=self.port,
+                    username=self.username,
+                    password=self.password,
+                    timeout=tcp_timeout,
+                    banner_timeout=60,
+                )
                 if self.connected:
                     return
-            except (NoValidConnectionsError, AuthenticationException, OSError, socket.timeout) as err:
+            except (
+                NoValidConnectionsError,
+                AuthenticationException,
+                OSError,
+                socket.timeout,
+            ) as err:
                 time.sleep(retry_delay)
                 last_e = err
         raise last_e
@@ -120,7 +128,12 @@ class SSHConnection:
                         else:
                             raise OSError("Can't get transport from ssh client!")
 
-            except (NoValidConnectionsError, AuthenticationException, OSError, socket.timeout):
+            except (
+                NoValidConnectionsError,
+                AuthenticationException,
+                OSError,
+                socket.timeout,
+            ):
                 raise SSHConnectionError(f"Failed to connect to {self.ip}:{self.port}")
 
     def disconnect(self) -> None:
@@ -205,12 +218,8 @@ class SSHConnection:
         command_exec_timeout: typing.Optional[int] = 10,
         tries=1,
         open_channel_timeout: int = 10,
-        connect_timeout: float = 30.0
-    ) -> typing.Tuple[
-        ChannelFile,
-        ChannelStderrFile,
-        typing.Optional[int],
-    ]:
+        connect_timeout: float = 30.0,
+    ) -> typing.Tuple[ChannelFile, ChannelStderrFile, typing.Optional[int],]:
         if tries < 1:
             raise ValueError("Number of 'tries' must be >= 1")
         for _ in range(tries):
@@ -245,10 +254,7 @@ class SSHConnection:
         return channel, stdout, stderr, None
 
     def execute_cmd_pty(
-        self,
-        command: str,
-        tries=1,
-        connect_timeout: float = 30.0
+        self, command: str, tries=1, connect_timeout: float = 30.0
     ) -> typing.Tuple[Channel, ChannelFile, ChannelStderrFile, typing.Optional[int]]:
         if tries < 1:
             raise ValueError("Number of 'tries' must be >= 1")
@@ -276,10 +282,40 @@ class SSHConnection:
                         return
         raise SFTPTransferFailed(f"Failed to get {remotepath} to {localpath}")
 
-    def put(self, localpath: str, remotepath: str, chmod: typing.Optional[int] = None) -> None:
+    def get_all(self, remote_path: Path, local_dir: Path) -> None:
+        """Get all files from remote path to the given local directory.
+
+        Examples:
+            /etc/vsomeip    ./tmp      - copy whole vsomeip folder to tmp dir
+            /etc/vsomeip/*.json  ./tmp - copy all json files to tmp dir
+            /etc/vapm.conf  ./tmp  - copy vamp.conf file to the tmp dir
+        """
+        self.connect(tcp_timeout=10)
+        try:
+            if not self.connected:
+                raise SFTPTransferFailed(f"Failed to connect to {self.ip}!")
+            if not (transport := self.sshclient.get_transport()):
+                raise SFTPTransferFailed(f"Failed to get transport layer!")
+            if not (sftp_client := SFTPClient.from_transport(transport)):
+                raise SFTPTransferFailed(f"Failed to create SFTP channel!")
+            with sftp_client as sftp:
+                try:
+                    if _is_file(remote_path, sftp):
+                        local_dir.mkdir(parents=True, exist_ok=True)
+                        return self.get(remote_path.as_posix(), local_dir.joinpath(remote_path.name).as_posix())
+                except IOError: # Pattern or dir was given?
+                    pass
+                _get_all(remote_path, local_dir, sftp)
+        finally:
+            self.disconnect()
+
+
+    def put(
+        self, localpath: str, remotepath: str, chmod: typing.Optional[int] = None
+    ) -> None:
         """Copy file to remote path.
 
-        Note: SFTPClient requires that file name should be included in remote path.
+        Note: SFTPClient requires that file name must be included in remote path.
         """
         self.connect(tcp_timeout=10)
         if self.connected:
@@ -292,7 +328,9 @@ class SSHConnection:
                         return
         raise SFTPTransferFailed(f"Failed to put {localpath} to {remotepath}")
 
-    def put_all(self, source: Path, remote_dir: Path, chmod: typing.Optional[int] = None):
+    def put_all(
+        self, source: Path, remote_dir: Path, chmod: typing.Optional[int] = None
+    ):
         """Copy file or whole directory to remote path.
 
         If remote directory already exists:
@@ -304,33 +342,52 @@ class SSHConnection:
         :param chmod: When defined, set given permission to all files/dirs.
         """
         if source.is_file():
-            return self.put(source.as_posix(), remote_dir.joinpath(source.name).as_posix())
+            return self.put(
+                source.as_posix(), remote_dir.joinpath(source.name).as_posix()
+            )
 
         self.connect(tcp_timeout=10)
-        if not self.connected:
-            raise SFTPTransferFailed(f"Failed to put {source} to {remote_dir}")
-        if not (transport := self.sshclient.get_transport()):
-            raise SFTPTransferFailed(f"Failed to put {source} to {remote_dir}")
-        if not (sftp_client := SFTPClient.from_transport(transport)):
-            raise SFTPTransferFailed(f"Failed to put {source} to {remote_dir}")
-        with sftp_client as sftp:
-            dest_dir_str: str = remote_dir.joinpath(source.name).as_posix()
-            try:
-                sftp.lstat(dest_dir_str)  # check if dir exists
-            except IOError:
-                logger.debug("Make remote dir: %s", dest_dir_str)
-                sftp.mkdir(dest_dir_str)
-            _put_all(source, remote_dir / source.name, sftp, chmod)
-            sftp.chmod(dest_dir_str, chmod if chmod else (source.stat().st_mode & 0o777))
+        try:
+            if not self.connected:
+                raise SFTPTransferFailed(f"Failed to connect to {self.ip}!")
+            if not (transport := self.sshclient.get_transport()):
+                raise SFTPTransferFailed(f"Failed to get transport layer!")
+            if not (sftp_client := SFTPClient.from_transport(transport)):
+                raise SFTPTransferFailed(f"Failed to create SFTP channel!")
+            with sftp_client as sftp:
+                dest_dir_str: str = remote_dir.joinpath(source.name).as_posix()
+                try:
+                    sftp.lstat(dest_dir_str)  # check if dir exists
+                except IOError:
+                    logger.debug("Make remote dir: %s", dest_dir_str)
+                    sftp.mkdir(dest_dir_str)
+                _put_all(source, remote_dir / source.name, sftp, chmod)
+                sftp.chmod(
+                    dest_dir_str, chmod if chmod else (source.stat().st_mode & 0o777)
+                )
+        finally:
+            self.disconnect()
 
 
-def _put(local_path: Path, remotepath: Path, sftp: SFTPClient, chmod: typing.Optional[int] = None):
+def _put(
+    local_path: Path,
+    remotepath: Path,
+    sftp: SFTPClient,
+    chmod: typing.Optional[int] = None,
+):
     logger.debug("Copy %s to %s", local_path, remotepath)
     sftp.put(local_path.as_posix(), remotepath.as_posix())
-    sftp.chmod(remotepath.as_posix(), chmod if chmod else (local_path.stat().st_mode & 0o777))
+    sftp.chmod(
+        remotepath.as_posix(), chmod if chmod else (local_path.stat().st_mode & 0o777)
+    )
 
 
-def _put_all(local_path: Path, remotepath: Path, sftp: SFTPClient, chmod: typing.Optional[int] = None):
+def _put_all(
+    local_path: Path,
+    remotepath: Path,
+    sftp: SFTPClient,
+    chmod: typing.Optional[int] = None,
+):
     for path in local_path.iterdir():
         relative_path: Path = path.relative_to(local_path)
         dest_path_str: str = remotepath.joinpath(relative_path).as_posix()
@@ -346,3 +403,31 @@ def _put_all(local_path: Path, remotepath: Path, sftp: SFTPClient, chmod: typing
             _put(path, remotepath.joinpath(relative_path), sftp, chmod)
         else:
             logger.warning("SFTP dont know how to copy path: %s", path)
+
+def _is_dir(remote_path, sftp):
+    stat = sftp.stat(remote_path.as_posix())
+    return stat.st_mode >> 9 == 32
+
+def _is_file(remote_path, sftp):
+    stat = sftp.stat(remote_path.as_posix())
+    return stat.st_mode >> 9 == 64
+
+def _get_all(remote_path: Path, local_dir: Path, sftp: SFTPClient) -> None:
+    """Get files from remote_path to local_dir.
+
+    scp /etc/dir /local_dir  - copy dir and its all content to the /local_dir
+    scp /etc/some* /local_dir - copy everything that starts with 'some*' to the /local_dir
+    """
+    pattern = remote_path.name
+    for name in sftp.listdir(remote_path.parent.as_posix()):
+        if not fnmatch.fnmatch(name, pattern):
+            continue
+        _remote = remote_path.parent.joinpath(name)
+        local_dir.mkdir(parents=True, exist_ok=True)
+        if _is_file(_remote, sftp):
+            sftp.get(_remote.as_posix(), local_dir.joinpath(name).as_posix())
+        elif _is_dir(_remote, sftp):
+            _local = local_dir.joinpath(name)
+            _get_all(_remote.joinpath("*"), _local, sftp)
+        else:
+            logger.warning("Skipping copying of unknown object at: %s", _remote)
