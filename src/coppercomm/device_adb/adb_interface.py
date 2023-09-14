@@ -20,6 +20,7 @@ import time
 import typing
 from typing import Union
 import datetime
+import pathlib
 
 from coppercomm.device_common.exceptions import RemountError, CommandFailedError, CopperCommmError
 from coppercomm.device_common.local_console import execute_command
@@ -170,7 +171,7 @@ class Adb:
         :returns: Current DeviceState (DeviceState.DEVICE/DeviceState.RECOVERY)
         """
         current_state = self.check_output("get-state", shell=False, timeout=5, assert_ok=False, log_output=False)
-        if "daemon not running; starting" in current_state:
+        if "daemon started successfully" in current_state:
             current_state = self.check_output("get-state", shell=False, timeout=5, assert_ok=False, log_output=False)
         if "more than one" in current_state:
             raise CopperCommmError(
@@ -395,6 +396,18 @@ class Adb:
         self.shell("recovery --wipe_data")
         self.wait_for_state(DeviceState.DEVICE)
         self.wait_for_boot_complete()
+
+    def take_screencap(self, dest_file: pathlib.Path):
+        """Create screenshoot and store it in dest_path file.
+
+        :param dest_path: Where to save file on host.
+        """
+        tmp_file = pathlib.Path(f"/sdcard/screenshot-{round(time.time())}.png")
+        if dest_file.is_dir():
+            dest_file = dest_file / tmp_file.name
+        self.check_output(f"screencap -p {tmp_file.as_posix()}", shell=True)
+        self.pull(tmp_file.as_posix(), dest_file.as_posix())
+        self.check_output(f"rm {tmp_file.as_posix()}", shell=True)
 
     @staticmethod
     def get_adb_version() -> int:
