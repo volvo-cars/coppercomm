@@ -16,18 +16,18 @@ from contextlib import contextmanager
 if typing.TYPE_CHECKING:
     from pathlib import Path
 
-    from coppercomm.device_serial.device_serial import SerialConnection
+    from coppercomm.device_common.interfaces import ConsoleInterface
 
 
 @contextmanager
-def conditional_qnx_serial_logging(qnx_serial: typing.Optional[SerialConnection], log_path: typing.Optional[Path]):
+def conditional_qnx_serial_logging(qnx_serial: typing.Optional[ConsoleInterface], log_path: typing.Optional[Path]):
     """Enter QNX serial logging context only if log path is provided
 
-    :param device: device factory
+    :param qnx_serial: Instance of QNX serial console.
     :param log_path: path to log file
     """
     if qnx_serial and log_path:
-        qnx_serial.set_test_logging(log_path)
+        qnx_serial.console_object.set_test_logging(log_path)
         yield
     else:
         yield
