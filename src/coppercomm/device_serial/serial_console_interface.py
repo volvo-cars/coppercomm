@@ -60,19 +60,20 @@ class SerialConsoleInterface(threading.Thread):
         self.set_prompt(prompt)
 
     def set_test_logging(self, path):
-        """
-        Function to modify logging path for serial during test session.
+        """Function to modify logging path for serial during test session.
+
         It swaps old handlers with the new one that has a specified path for current test case.
+
+        :param path: Path to the output file
         """
-        self.logger = logging.getLogger(__name__)
         file_handler = logging.FileHandler(filename=path, mode="a", encoding=None, delay=False)
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
         file_handler.setFormatter(formatter)
         file_handler.setLevel(logging.DEBUG)
-        for old_handler in self.logger.handlers:
-            self.logger.removeHandler(old_handler)
+        for handler in self.logger.handlers:
+            if isinstance(handler, logging.FileHandler):
+                self.logger.removeHandler(handler)
         self.logger.addHandler(file_handler)
-        self.logger.propagate = False
 
     def set_prompt(self, prompt: Union[str, List[str], None]) -> None:
         self._prompt_regex = self._get_prompt_regex(prompt)
