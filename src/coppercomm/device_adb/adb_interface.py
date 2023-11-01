@@ -375,13 +375,13 @@ class Adb:
         self.shell(command="disable-verity", assert_ok=False)
         out = self.shell(command="remount", assert_ok=False).strip()
 
-        if out != "remount succeeded":
+        if "remount succeeded" not in out.lower():
             self.reboot_and_wait()
             self.wait_for_boot_complete()
             self.gain_root_permissions()
             out = self.shell(command="remount", assert_ok=False).strip()
 
-            if out != "remount succeeded":
+            if "remount succeeded" not in out.lower():
                 raise RemountError(f"Failed to mount filesystem as root: {out}")
 
     def perform_factory_reset(self):
