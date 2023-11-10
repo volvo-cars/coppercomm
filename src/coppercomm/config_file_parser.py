@@ -102,7 +102,7 @@ class Config:
 
     @throw_config_error_on_value_missing_in_config
     def get_host_ip_address(self) -> str:
-        return self.device_config_data["HOST"]["ip"]
+        return self.device_config_data["NETWORK"]["HOST"][0]["ip"]
 
     @throw_config_error_on_value_missing_in_config
     def get_oem(self) -> str:
