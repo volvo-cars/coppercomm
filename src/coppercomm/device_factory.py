@@ -12,7 +12,7 @@
 import typing
 from pathlib import Path
 
-from coppercomm.config_file_parser import Config, ConfigFileParseError, SerialDeviceType, load_config
+from coppercomm.config_file_parser import Config, ConfigFileParseError, load_config
 from coppercomm.device_adb.adb_interface import Adb
 from coppercomm.device_serial.device_serial import SerialConnection
 from coppercomm.ssh_connection.ssh_connection import SSHConnection
@@ -51,19 +51,10 @@ class DeviceFactory:
             port = "22"
         return SSHConnection(ip=self.config.get_qnx_ip(), port=port)
 
-    def create_serial_devices(
-        self,
-    ) -> typing.Mapping[SerialDeviceType, SerialConnection]:
-        return {t: SerialConnection(self.config, t) for t in self.available_serials()}
-
-    def create_serial(self, serial_device_type: SerialDeviceType) -> SerialConnection:
-        if serial_device_type not in self.available_serials():
+    def create_serial(self, serial_device_type: str) -> SerialConnection:
+        if serial_device_type not in self.config.get_name_of_available_serials_in_config():
             raise DeviceResourceUnavailableError(f"{serial_device_type}")
         return SerialConnection(self.config, serial_device_type)
 
-    def available_serials(self) -> typing.Sequence[SerialDeviceType]:
-        serials = {
-            "device1": (SerialDeviceType.SupportCPU, SerialDeviceType.QNX),
-            "DHU": (SerialDeviceType.SupportCPU, SerialDeviceType.QNX),
-        }
-        return serials[self.config.get_device_name()]
+    def create_serial_devices(self):
+        return {t: SerialConnection(self.config, t) for t in self.config.get_name_of_available_serials_in_config()}

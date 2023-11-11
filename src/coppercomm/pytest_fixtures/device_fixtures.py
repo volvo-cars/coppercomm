@@ -27,7 +27,7 @@ import pytest
 import typing
 from pathlib import Path
 
-from coppercomm.config_file_parser import Config, SerialDeviceType
+from coppercomm.config_file_parser import Config
 from coppercomm.device_adb.adb_interface import Adb
 from coppercomm.device_factory import DeviceFactory
 from coppercomm.device_serial.device_serial import SerialConnection
@@ -62,6 +62,7 @@ def qnx_broadrreach_ssh(device_factory: DeviceFactory) -> typing.Optional[SSHCon
     except:
         return None
 
+
 @pytest.fixture(scope="function")
 def device_available(adb_connection_state_monitor, ssh_connection_state_monitor):
     """
@@ -84,21 +85,17 @@ def device_available(adb_connection_state_monitor, ssh_connection_state_monitor)
 @pytest.fixture(scope="session")
 def qnx_serial(device_factory: DeviceFactory) -> typing.Optional[SerialConnection]:
     try:
-        return device_factory.create_serial(SerialDeviceType.QNX)
+        return device_factory.create_serial("QNX")
     except:
         return None
+
 
 @pytest.fixture(scope="session")
 def support_cpu_serial(device_factory: DeviceFactory) -> typing.Optional[SerialConnection]:
     try:
-        return device_factory.create_serial(SerialDeviceType.SupportCPU)
+        return device_factory.create_serial("SupportCPU")
     except:
         return None
-
-
-@pytest.fixture(scope="session")
-def hkp_serial(device_factory: DeviceFactory) -> SerialConnection:
-    return device_factory.create_serial(SerialDeviceType.SupportCPU)
 
 
 @pytest.fixture(scope="session")

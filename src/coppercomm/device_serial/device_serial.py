@@ -14,7 +14,7 @@ import typing
 
 from collections.abc import Mapping
 
-from coppercomm.config_file_parser import Config, SerialDeviceType
+from coppercomm.config_file_parser import Config
 from coppercomm.device_serial.serial_console_interface import SerialConsoleInterface
 from coppercomm.device_serial.console import Console
 
@@ -24,11 +24,11 @@ class InvalidSerialDeviceError(Exception):
 
 
 class SerialConnection(Console):
-    def __init__(self, config: Config, serial_device: SerialDeviceType) -> None:
+    def __init__(self, config: Config, serial_device: str) -> None:
         self._logger = logging.getLogger(__name__)
         self.console_object = SerialConsoleInterface(
             config.get_serial_device_path(serial_device),
-            connection_name=serial_device.value,
+            connection_name=serial_device,
             prompt=config.get_serial_prompt(serial_device),
         )
 
@@ -43,27 +43,3 @@ class SerialConnection(Console):
 
     def set_test_logging(self, path):
         self.console_object.set_test_logging(path=path)
-
-
-class SerialConnectionMapping(Mapping):
-    def __init__(self) -> None:
-        self._devices: typing.Dict[SerialDeviceType, SerialConnection] = {}
-
-    def __getitem__(self, serial_device_type: SerialDeviceType) -> SerialConnection:
-        try:
-            return self._devices[serial_device_type]
-        except KeyError as ke:
-            raise InvalidSerialDeviceError(
-                f"Invalid serial device: {ke}. Available devices: {list(self.keys())}"
-            ) from None
-
-    def __setitem__(
-        self, serial_device_type: SerialDeviceType, serial_connection: SerialConnection
-    ) -> None:
-        self._devices[serial_device_type] = serial_connection
-
-    def __iter__(self) -> typing.Iterator[SerialDeviceType]:
-        return self._devices.__iter__()
-
-    def __len__(self) -> int:
-        return len(self._devices)

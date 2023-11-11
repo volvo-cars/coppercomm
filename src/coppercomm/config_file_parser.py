@@ -41,8 +41,6 @@ def throw_config_error_on_value_missing_in_config(func):
 class SerialDeviceType(Enum):
     QNX = "QNX"
     SupportCPU = "SupportCPU"
-    HKP = "HKP"  # TODO: Should be removed. Use SupportCPU instead.
-
 
 class Config:
     """Class that contains device configuration information."""
@@ -51,10 +49,10 @@ class Config:
         self.device_config_data = data
 
     @throw_config_error_on_value_missing_in_config
-    def get_serial_device_path(self, serial_device: SerialDeviceType) -> str:
-        return self.device_config_data[serial_device.value]["tty"]
+    def get_serial_device_path(self, serial_device: str) -> str:
+        return self.device_config_data[serial_device]["tty"]
 
-    def get_serial_prompt(self, serial_device: SerialDeviceType) -> Union[str, List[str]]:
+    def get_serial_prompt(self, serial_device: str) -> Union[str, List[str]]:
         return ""
 
     @throw_config_error_on_value_missing_in_config
@@ -111,6 +109,14 @@ class Config:
     @throw_config_error_on_value_missing_in_config
     def get_network_configuraiton_data(self) -> dict:
         return self.device_config_data["NETWORK"]
+
+    def get_name_of_available_serials_in_config(self):
+        serials = []
+        for attr in self.device_config_data:
+            if "tty" in self.device_config_data[attr]: # tty mean its serial_device
+                serials.append(attr)
+        return serials
+
 
 def _config_file_from_variable(env_variable: str, filename: str) -> Optional[Path]:
     if device_config_file_variable := os.getenv(env_variable):

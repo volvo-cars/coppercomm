@@ -15,7 +15,7 @@ import typing
 from contextlib import ExitStack
 from dataclasses import dataclass
 
-from coppercomm.config_file_parser import Config, SerialDeviceType
+from coppercomm.config_file_parser import Config
 from coppercomm.device_adb.adb_interface import Adb
 from coppercomm.device_factory import DeviceFactory
 from coppercomm.device_serial.device_serial import SerialConnection
@@ -36,7 +36,7 @@ class Device:
 
     config: Config
     adb: Adb
-    serial_devices: typing.Mapping[SerialDeviceType, SerialConnection]
+    serial_devices: typing.Mapping[str, SerialConnection]
     ssh: typing.Mapping[str, SSHConnection]
     test_log_dir: LogDir
 
