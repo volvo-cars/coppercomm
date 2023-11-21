@@ -48,6 +48,31 @@ class Config:
     def __init__(self, data: dict) -> None:
         self.device_config_data = data
 
+    def has_entry(self, entry_path: str) -> bool:
+        """Allow to check if given entry exists in config file without throwing error.
+
+        Example:
+            >>> config.has_entry("ADB.adb_device_id")
+            True
+
+        param: entry_path: Path to entry in config file. Path parts are separated by dot.
+        return: True if entry exists, False otherwise.
+        """
+        path_parts = entry_path.split(".")
+        pos_pointer = self.device_config_data
+        for part_name in path_parts:
+            if isinstance(pos_pointer, dict):
+                if part_name not in pos_pointer:
+                    return False
+            else:
+                try:
+                    index = int(part_name)
+                    pos_pointer = pos_pointer[index]
+                except ValueError:
+                    return False
+        return True
+
+
     @throw_config_error_on_value_missing_in_config
     def get_serial_device_path(self, serial_device: str) -> str:
         return self.device_config_data[serial_device]["tty"]
@@ -58,6 +83,10 @@ class Config:
     @throw_config_error_on_value_missing_in_config
     def get_adb_device_id(self) -> str:
         return self.device_config_data["ADB"]["adb_device_id"]
+
+    @throw_config_error_on_value_missing_in_config
+    def get_fastboot_device_id(self) -> str:
+        return self.device_config_data["FASTBOOT"]["fastboot_device_id"]
 
     @throw_config_error_on_value_missing_in_config
     def get_extra_devices_ids(self) -> List[str]:

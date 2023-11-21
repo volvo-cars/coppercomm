@@ -4,6 +4,33 @@ from unittest.mock import MagicMock, Mock, patch, sentinel
 from coppercomm import config_file_parser
 
 
+class TestConfig:
+
+    def test_has_entry_when_exists(self):
+        config = config_file_parser.Config({"a": {"b": {"c": 1}}})
+
+        assert config.has_entry("a") is True
+        assert config.has_entry("a.b") is True
+        assert config.has_entry("a.b.c") is True
+
+    def test_has_entry_when_not_exists(self):
+        config = config_file_parser.Config({"a": {"b": {"c": 1}}})
+
+        assert config.has_entry("d") is False
+        assert config.has_entry("a.d") is False
+        assert config.has_entry("a.b.d") is False
+
+    def test_has_entry_when_one_element_is_list(self):
+        config = config_file_parser.Config({"a": [{"a": "a"}, {"b": "b"}]})
+
+        assert config.has_entry("0") is False
+        assert config.has_entry("a.0.a") is True
+        assert config.has_entry("a.0.b") is False
+        assert config.has_entry("a.1.a") is False
+        assert config.has_entry("a.1.b") is True
+        assert config.has_entry("a.b.c") is False
+
+
 @patch("coppercomm.config_file_parser.Path")
 @patch("os.getenv")
 def test_config_file_from_variable_1(getenv_m, path_class_m):
