@@ -64,6 +64,7 @@ class Config:
             if isinstance(pos_pointer, dict):
                 if part_name not in pos_pointer:
                     return False
+                pos_pointer = pos_pointer[part_name]
             else:
                 try:
                     index = int(part_name)
