@@ -63,25 +63,6 @@ def qnx_broadrreach_ssh(device_factory: DeviceFactory) -> typing.Optional[SSHCon
         return None
 
 
-@pytest.fixture(scope="function")
-def device_available(adb_connection_state_monitor, ssh_connection_state_monitor):
-    """
-    Check if device is up before the test. If not do not run test.
-    """
-    try:
-        ssh = ssh_connection_state_monitor.get_state()
-        adb = adb_connection_state_monitor.get_state()
-        if ssh is True and adb == "DEVICE":
-            yield
-        else:
-            pytest.fail(
-                "Device sanity check failed. Test won't run until device is up.\n SSH connection: {} // ADB "
-                "state: {}".format(ssh, adb)
-            )
-    except Exception:
-        pytest.fail("Monitors initialization failed!")
-
-
 @pytest.fixture(scope="session")
 def qnx_serial(device_factory: DeviceFactory) -> typing.Optional[SerialConnection]:
     try:
