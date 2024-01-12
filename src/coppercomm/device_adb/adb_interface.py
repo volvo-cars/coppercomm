@@ -10,21 +10,20 @@
 # limitations under the License.
 
 import contextlib
+import datetime
 import enum
 import glob
 import logging
 import os
+import pathlib
 import shlex
 import subprocess
 import time
 import typing
 from typing import Union
-import datetime
-import pathlib
 
-from coppercomm.device_common.exceptions import RemountError, CommandFailedError, CopperCommmError
+from coppercomm.device_common.exceptions import CommandFailedError, CopperCommmError, RemountError
 from coppercomm.device_common.local_console import execute_command
-
 
 _logger = logging.getLogger("adb_interface")
 _logger.setLevel(logging.DEBUG)
@@ -32,6 +31,7 @@ _logger.setLevel(logging.DEBUG)
 _kernel_boot_id_path = "/proc/sys/kernel/random/boot_id"
 
 Pathish = Union[str, os.PathLike]
+
 
 class DeviceState(enum.Enum):
     DEVICE = "device"
@@ -64,7 +64,7 @@ class Adb:
         assert_ok: bool = True,
         regrep: typing.Union[str, typing.Pattern[str], None] = None,
         timeout: typing.Optional[float] = None,
-        log_output: bool = True
+        log_output: bool = True,
     ) -> str:
         """
         Execute command on adb device. If 'command' passed as a string it will be splitted by shlex.split
@@ -84,9 +84,7 @@ class Adb:
             command.insert(0, "shell")
 
         adb_command = self._adb_cmd + command
-        return execute_command(
-            adb_command, assert_ok=assert_ok, regrep=regrep, timeout=timeout, log_output=log_output
-        )
+        return execute_command(adb_command, assert_ok=assert_ok, regrep=regrep, timeout=timeout, log_output=log_output)
 
     def shell(
         self,
@@ -95,7 +93,7 @@ class Adb:
         assert_ok: bool = True,
         regrep: typing.Union[str, typing.Pattern[str], None] = None,
         timeout: typing.Optional[float] = None,
-        log_output: bool = True
+        log_output: bool = True,
     ) -> str:
         """
         Same as using check_output with shell=True argument
@@ -179,9 +177,11 @@ class Adb:
             )
         if "unauthorized" in current_state:
             return DeviceState.UNAUTHORIZED
-        if "not found" in current_state or \
-                "no devices/emulators found" in current_state or \
-                "device offline" in current_state:
+        if (
+            "not found" in current_state
+            or "no devices/emulators found" in current_state
+            or "device offline" in current_state
+        ):
             return DeviceState.OFFLINE
         return DeviceState(current_state.strip())
 
@@ -267,6 +267,43 @@ class Adb:
             time.sleep(2)
         raise Exception(f"Android property 'sys.boot_completed' != 1 after {timeout}s!")
 
+    def wait_for_desktop(self, timeout: float = 60) -> None:
+        """Wait for android desktop is fully loaded
+        Wait for logcat event from system buffer: Finished processing BOOT_COMPLETED for u10
+        """
+        _logger.debug("Waiting for android desktop is fully loaded (timeout %ds)..", timeout)
+        self.wait_for_log(
+            log_buffer="system",
+            log_tag="ActivityManager",
+            log_text="Finished processing BOOT_COMPLETED for u10",
+            timeout=60,
+        )
+
+    def wait_for_log(
+        self, log_buffer: str, log_tag: str, log_text: typing.Union[str, None] = None, timeout: float = 60
+    ) -> None:
+        """Wait for an android logcat message or event with specific text
+        :param log_buffer: filter the log by buffer name (main, system, events, etc.)
+        :param log_tag: specify the log tag
+        :param log_text: an optional parameter to specify the log text
+        :param timeout: Timeout for waiting for a log message or event with specific text
+        """
+        _logger.debug("Wait for android log: %s with text: %s (timeout %ds)..", log_tag, log_text, timeout)
+
+        monotonic_timeout = time.monotonic() + timeout
+        while time.monotonic() < monotonic_timeout:
+            if log_text is not None:
+                logcat_cmd = f"logcat -b {log_buffer} -d | grep {log_tag} | grep '\"{log_text}\"'"
+            else:
+                logcat_cmd = f"logcat -b {log_buffer} -d | grep {log_tag}"
+            output = self.shell(command=logcat_cmd, assert_ok=False)
+            if len(output) != 0:
+                _logger.info(f"log: {log_tag} with text: {log_text} received")
+                return
+            _logger.warning(f"log: {log_tag} with text: {log_text} not received yet")
+            time.sleep(2)
+        raise Exception(f"Android log: {log_tag} with text: {log_text} not received after {timeout}s!")
+
     def push(
         self,
         local_path: Pathish,
@@ -296,9 +333,7 @@ class Adb:
             self.check_output("mkdir -p {}".format(str(on_device_path)), shell=True)
         for to_push_element in to_push_list:
             self._log("Pushing {} to {}".format(to_push_element, str(on_device_path)))
-            self.check_output(
-                "push {} {}".format(to_push_element, str(on_device_path)), timeout=timeout
-            )
+            self.check_output("push {} {}".format(to_push_element, str(on_device_path)), timeout=timeout)
 
         if sync:
             self.shell("sync", timeout=60)
