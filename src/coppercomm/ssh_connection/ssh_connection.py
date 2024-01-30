@@ -291,24 +291,20 @@ class SSHConnection:
             /etc/vapm.conf  ./tmp  - copy vamp.conf file to the tmp dir
         """
         self.connect(tcp_timeout=10)
-        try:
-            if not self.connected:
-                raise SFTPTransferFailed(f"Failed to connect to {self.ip}!")
-            if not (transport := self.sshclient.get_transport()):
-                raise SFTPTransferFailed(f"Failed to get transport layer!")
-            if not (sftp_client := SFTPClient.from_transport(transport)):
-                raise SFTPTransferFailed(f"Failed to create SFTP channel!")
-            with sftp_client as sftp:
-                try:
-                    if _is_file(remote_path, sftp):
-                        local_dir.mkdir(parents=True, exist_ok=True)
-                        return self.get(remote_path.as_posix(), local_dir.joinpath(remote_path.name).as_posix())
-                except IOError: # Pattern or dir was given?
-                    pass
-                _get_all(remote_path, local_dir, sftp)
-        finally:
-            self.disconnect()
-
+        if not self.connected:
+            raise SFTPTransferFailed(f"Failed to connect to {self.ip}!")
+        if not (transport := self.sshclient.get_transport()):
+            raise SFTPTransferFailed(f"Failed to get transport layer!")
+        if not (sftp_client := SFTPClient.from_transport(transport)):
+            raise SFTPTransferFailed(f"Failed to create SFTP channel!")
+        with sftp_client as sftp:
+            try:
+                if _is_file(remote_path, sftp):
+                    local_dir.mkdir(parents=True, exist_ok=True)
+                    return self.get(remote_path.as_posix(), local_dir.joinpath(remote_path.name).as_posix())
+            except IOError: # Pattern or dir was given?
+                pass
+            _get_all(remote_path, local_dir, sftp)
 
     def put(
         self, localpath: str, remotepath: str, chmod: typing.Optional[int] = None
@@ -347,27 +343,23 @@ class SSHConnection:
             )
 
         self.connect(tcp_timeout=10)
-        try:
-            if not self.connected:
-                raise SFTPTransferFailed(f"Failed to connect to {self.ip}!")
-            if not (transport := self.sshclient.get_transport()):
-                raise SFTPTransferFailed(f"Failed to get transport layer!")
-            if not (sftp_client := SFTPClient.from_transport(transport)):
-                raise SFTPTransferFailed(f"Failed to create SFTP channel!")
-            with sftp_client as sftp:
-                dest_dir_str: str = remote_dir.joinpath(source.name).as_posix()
-                try:
-                    sftp.lstat(dest_dir_str)  # check if dir exists
-                except IOError:
-                    logger.debug("Make remote dir: %s", dest_dir_str)
-                    sftp.mkdir(dest_dir_str)
-                _put_all(source, remote_dir / source.name, sftp, chmod)
-                sftp.chmod(
-                    dest_dir_str, chmod if chmod else (source.stat().st_mode & 0o777)
-                )
-        finally:
-            self.disconnect()
-
+        if not self.connected:
+            raise SFTPTransferFailed(f"Failed to connect to {self.ip}!")
+        if not (transport := self.sshclient.get_transport()):
+            raise SFTPTransferFailed(f"Failed to get transport layer!")
+        if not (sftp_client := SFTPClient.from_transport(transport)):
+            raise SFTPTransferFailed(f"Failed to create SFTP channel!")
+        with sftp_client as sftp:
+            dest_dir_str: str = remote_dir.joinpath(source.name).as_posix()
+            try:
+                sftp.lstat(dest_dir_str)  # check if dir exists
+            except IOError:
+                logger.debug("Make remote dir: %s", dest_dir_str)
+                sftp.mkdir(dest_dir_str)
+            _put_all(source, remote_dir / source.name, sftp, chmod)
+            sftp.chmod(
+                dest_dir_str, chmod if chmod else (source.stat().st_mode & 0o777)
+            )
 
 def _put(
     local_path: Path,
