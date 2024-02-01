@@ -66,7 +66,7 @@ class SerialConsoleInterface(threading.Thread):
 
         :param path: Path to the output file
         """
-        file_handler = logging.FileHandler(filename=path, mode="a", encoding=None, delay=False)
+        file_handler = logging.FileHandler(filename=path, mode="a", encoding=None, delay=True)
         formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
         file_handler.setFormatter(formatter)
         file_handler.setLevel(logging.DEBUG)
