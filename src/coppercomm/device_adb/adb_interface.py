@@ -63,7 +63,7 @@ class Adb:
         shell: bool = False,
         assert_ok: bool = True,
         regrep: typing.Union[str, typing.Pattern[str], None] = None,
-        timeout: typing.Optional[float] = None,
+        timeout: typing.Optional[float] = 30,
         log_output: bool = True,
     ) -> str:
         """
@@ -92,7 +92,7 @@ class Adb:
         *,
         assert_ok: bool = True,
         regrep: typing.Union[str, typing.Pattern[str], None] = None,
-        timeout: typing.Optional[float] = None,
+        timeout: typing.Optional[float] = 30,
         log_output: bool = True,
     ) -> str:
         """
@@ -311,7 +311,7 @@ class Adb:
         *,
         create_dest_dir: bool = False,
         sync: bool = False,
-        timeout: typing.Optional[float] = None,
+        timeout: typing.Optional[float] = 60,
     ) -> None:
         """
         Push files/directory to the device - glob pattern and env variables are resolved.
@@ -343,7 +343,7 @@ class Adb:
         on_device_path: str,
         local_path: str,
         *,
-        timeout: typing.Optional[float] = None,
+        timeout: typing.Optional[float] = 60,
     ) -> None:
         """
         Pull files/directory from the device
