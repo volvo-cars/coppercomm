@@ -11,7 +11,6 @@
 
 import logging
 import os
-from contextlib import ExitStack
 from datetime import datetime
 
 _logger = logging.getLogger(__name__)

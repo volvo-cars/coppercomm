@@ -59,7 +59,7 @@ def qnx_ssh_over_adb(device_factory: DeviceFactory, adb: Adb) -> SSHConnection:
 def qnx_broadrreach_ssh(device_factory: DeviceFactory) -> typing.Optional[SSHConnection]:
     try:
         return device_factory.create_broadrreach_ssh()
-    except:
+    except Exception:
         return None
 
 
@@ -67,7 +67,7 @@ def qnx_broadrreach_ssh(device_factory: DeviceFactory) -> typing.Optional[SSHCon
 def qnx_serial(device_factory: DeviceFactory) -> typing.Optional[SerialConnection]:
     try:
         return device_factory.create_serial("QNX")
-    except:
+    except Exception:
         return None
 
 
@@ -75,7 +75,7 @@ def qnx_serial(device_factory: DeviceFactory) -> typing.Optional[SerialConnectio
 def support_cpu_serial(device_factory: DeviceFactory) -> typing.Optional[SerialConnection]:
     try:
         return device_factory.create_serial("SupportCPU")
-    except:
+    except Exception:
         return None
 
 

@@ -294,9 +294,9 @@ class SSHConnection:
         if not self.connected:
             raise SFTPTransferFailed(f"Failed to connect to {self.ip}!")
         if not (transport := self.sshclient.get_transport()):
-            raise SFTPTransferFailed(f"Failed to get transport layer!")
+            raise SFTPTransferFailed("Failed to get transport layer!")
         if not (sftp_client := SFTPClient.from_transport(transport)):
-            raise SFTPTransferFailed(f"Failed to create SFTP channel!")
+            raise SFTPTransferFailed("Failed to create SFTP channel!")
         with sftp_client as sftp:
             try:
                 if _is_file(remote_path, sftp):
@@ -346,9 +346,9 @@ class SSHConnection:
         if not self.connected:
             raise SFTPTransferFailed(f"Failed to connect to {self.ip}!")
         if not (transport := self.sshclient.get_transport()):
-            raise SFTPTransferFailed(f"Failed to get transport layer!")
+            raise SFTPTransferFailed("Failed to get transport layer!")
         if not (sftp_client := SFTPClient.from_transport(transport)):
-            raise SFTPTransferFailed(f"Failed to create SFTP channel!")
+            raise SFTPTransferFailed("Failed to create SFTP channel!")
         with sftp_client as sftp:
             dest_dir_str: str = remote_dir.joinpath(source.name).as_posix()
             try:

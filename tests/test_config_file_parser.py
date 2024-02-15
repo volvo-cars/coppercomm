@@ -45,6 +45,7 @@ def test_config_file_from_variable_1(getenv_m, path_class_m):
     resp = config_file_parser._config_file_from_variable(sentinel.my_var, "my_file.json")
 
     assert resp is file_in_device_config_path
+    path_class_m.assert_called_once_with(some_str_p)
     device_config_path.__truediv__.assert_called_once_with("my_file.json")
 
 @patch("coppercomm.config_file_parser.Path")
@@ -56,7 +57,9 @@ def test_config_file_from_variable_2(getenv_m, path_class_m):
     device_config_path.is_file.return_value = True
 
     resp = config_file_parser._config_file_from_variable(sentinel.my_var, "my_file.json")
+
     assert resp is device_config_path
+    path_class_m.assert_called_once_with(some_str_p)
     device_config_path.__truediv__.assert_not_called()
 
 

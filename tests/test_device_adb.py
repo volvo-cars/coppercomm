@@ -28,7 +28,7 @@ def test_adb_check_output(mock_execute):
         ["adb", "-s", test_adb_id, "ls", "-la"],
         assert_ok=True,
         regrep=None,
-        timeout=None,
+        timeout=30,
         log_output=True
     )
     assert "a.txt b.txt" == result
@@ -42,7 +42,7 @@ def test_adb_check_output_shell(mock_execute):
         ["adb", "-s", test_adb_id, "shell", "ls"],
         assert_ok=True,
         regrep=None,
-        timeout=None,
+        timeout=30,
         log_output=True
     )
 
@@ -55,7 +55,7 @@ def test_adb_shell(mock_execute):
         ["adb", "-s", test_adb_id, "shell", "ls"],
         assert_ok=True,
         regrep=None,
-        timeout=None,
+        timeout=30,
         log_output=True
     )
 
@@ -67,10 +67,10 @@ def test_adb_gain_root_permissions(mock_execute):
 
     calls = [
         call(["adb", "-s", test_adb_id, "get-state"], assert_ok=False, regrep=None, timeout=5, log_output=False),
-        call(["adb", "-s", test_adb_id, "shell", "whoami"], assert_ok=True, regrep=None, timeout=None, log_output=True),
-        call(["adb", "-s", test_adb_id, "root"], assert_ok=False, regrep=None, timeout=None, log_output=True),
+        call(["adb", "-s", test_adb_id, "shell", "whoami"], assert_ok=True, regrep=None, timeout=30, log_output=True),
+        call(["adb", "-s", test_adb_id, "root"], assert_ok=False, regrep=None, timeout=30, log_output=True),
         call(["adb", "-s", test_adb_id, "get-state"], assert_ok=False, regrep=None, timeout=5, log_output=False),
-        call(["adb", "-s", test_adb_id, "shell", "whoami"], assert_ok=True, regrep=None, timeout=None, log_output=True)
+        call(["adb", "-s", test_adb_id, "shell", "whoami"], assert_ok=True, regrep=None, timeout=30, log_output=True)
     ]
     mock_execute.assert_has_calls(calls)
 
@@ -88,7 +88,7 @@ def test_adb_gain_root_permissions_already_root(mock_execute):
             timeout=5,
             log_output=False
         ),
-        call(["adb", "-s", test_adb_id, "shell", "whoami"], assert_ok=True, regrep=None, timeout=None, log_output=True),
+        call(["adb", "-s", test_adb_id, "shell", "whoami"], assert_ok=True, regrep=None, timeout=30, log_output=True),
     ]
     mock_execute.assert_has_calls(calls)
 
@@ -135,14 +135,14 @@ def test_adb_push(mock_execute):
             ["adb", "-s", test_adb_id, "shell", "mkdir", "-p", "/dev/disk/test"],
             assert_ok=True,
             regrep=None,
-            timeout=None,
+            timeout=30,
             log_output=True
         ),
         call(
             ["adb", "-s", test_adb_id, "push", tmpdir, "/dev/disk/test"],
             assert_ok=True,
             regrep=None,
-            timeout=None,
+            timeout=60,
             log_output=True
         ),
         call(
@@ -186,7 +186,7 @@ def test_adb_pull(mock_execute):
         ["adb", "-s", test_adb_id, "pull", tmpdir2, tmpdir1],
         assert_ok=True,
         regrep=None,
-        timeout=None,
+        timeout=60,
         log_output=True
     )
 
@@ -201,7 +201,7 @@ def test_adb_get_boot_id(mock_execute):
         ["adb", "-s", test_adb_id, "shell", "cat", "/proc/sys/kernel/random/boot_id"],
         assert_ok=True,
         regrep=None,
-        timeout=None,
+        timeout=30,
         log_output=True
     )
     assert "123" == result
@@ -215,7 +215,7 @@ def test_adb_trigger_reboot(mock_execute):
         ["adb", "-s", test_adb_id, "shell", "reboot"],
         assert_ok=True,
         regrep=None,
-        timeout=None,
+        timeout=30,
         log_output=True
     )
 
@@ -237,10 +237,10 @@ def test_adb_reboot_and_wait(mock_execute):
             ],
             assert_ok=True,
             regrep=None,
-            timeout=None,
+            timeout=30,
             log_output=True
         ),
-        call(["adb", "-s", test_adb_id, "shell", "reboot"], assert_ok=True, regrep=None, timeout=None, log_output=True),
+        call(["adb", "-s", test_adb_id, "shell", "reboot"], assert_ok=True, regrep=None, timeout=30, log_output=True),
         call(
             [
                 "adb",
@@ -252,7 +252,7 @@ def test_adb_reboot_and_wait(mock_execute):
             ],
             assert_ok=True,
             regrep=None,
-            timeout=None,
+            timeout=30,
             log_output=False
         ),
     ]
@@ -281,10 +281,10 @@ def test_adb_reboot_and_wait_unable_to_reboot(mock_execute):
             ],
             assert_ok=True,
             regrep=None,
-            timeout=None,
+            timeout=30,
             log_output=True
         ),
-        call(["adb", "-s", test_adb_id, "shell", "reboot"], assert_ok=True, regrep=None, timeout=None, log_output=True),
+        call(["adb", "-s", test_adb_id, "shell", "reboot"], assert_ok=True, regrep=None, timeout=30, log_output=True),
         call(
             [
                 "adb",
@@ -296,7 +296,7 @@ def test_adb_reboot_and_wait_unable_to_reboot(mock_execute):
             ],
             assert_ok=True,
             regrep=None,
-            timeout=None,
+            timeout=30,
             log_output=False
         ),
     ]
@@ -311,12 +311,12 @@ def test_adb_mount_filesytem_as_root(mock_execute):
 
     calls = [
         call(["adb", "-s", test_adb_id, "get-state"], assert_ok=False, regrep=None, timeout=5, log_output=False),
-        call(["adb", "-s", test_adb_id, "shell", "whoami"], assert_ok=True, regrep=None, timeout=None, log_output=True),
-        call(["adb", "-s", test_adb_id, "root"], assert_ok=False, regrep=None, timeout=None, log_output=True),
+        call(["adb", "-s", test_adb_id, "shell", "whoami"], assert_ok=True, regrep=None, timeout=30, log_output=True),
+        call(["adb", "-s", test_adb_id, "root"], assert_ok=False, regrep=None, timeout=30, log_output=True),
         call(["adb", "-s", test_adb_id, "get-state"], assert_ok=False, regrep=None, timeout=5, log_output=False),
-        call(["adb", "-s", test_adb_id, "shell", "whoami"], assert_ok=True, regrep=None, timeout=None, log_output=True),
-        call(["adb", "-s", test_adb_id, "shell", "disable-verity"], assert_ok=False, regrep=None, timeout=None, log_output=True),
-        call(["adb", "-s", test_adb_id, "shell", "remount"], assert_ok=False, regrep=None, timeout=None, log_output=True),
+        call(["adb", "-s", test_adb_id, "shell", "whoami"], assert_ok=True, regrep=None, timeout=30, log_output=True),
+        call(["adb", "-s", test_adb_id, "shell", "disable-verity"], assert_ok=False, regrep=None, timeout=30, log_output=True),
+        call(["adb", "-s", test_adb_id, "shell", "remount"], assert_ok=False, regrep=None, timeout=30, log_output=True),
     ]
     mock_execute.assert_has_calls(calls)
 
@@ -332,16 +332,16 @@ def test_adb_mount_filesytem_as_root_unable_to_remount(mock_execute):
 
     calls = [
         call(["adb", "-s", test_adb_id, "get-state"], assert_ok=False, regrep=None, timeout=5, log_output=False),
-        call(["adb", "-s", test_adb_id, "shell", "whoami"], assert_ok=True, regrep=None, timeout=None, log_output=True),
-        call(["adb", "-s", test_adb_id, "root"], assert_ok=False, regrep=None, timeout=None, log_output=True),
+        call(["adb", "-s", test_adb_id, "shell", "whoami"], assert_ok=True, regrep=None, timeout=30, log_output=True),
+        call(["adb", "-s", test_adb_id, "root"], assert_ok=False, regrep=None, timeout=30, log_output=True),
         call(["adb", "-s", test_adb_id, "get-state"], assert_ok=False, regrep=None, timeout=5, log_output=False),
-        call(["adb", "-s", test_adb_id, "shell", "whoami"], assert_ok=True, regrep=None, timeout=None, log_output=True),
-        call(["adb", "-s", test_adb_id, "shell", "disable-verity"], assert_ok=False, regrep=None, timeout=None, log_output=True),
-        call(["adb", "-s", test_adb_id, "shell", "remount"], assert_ok=False, regrep=None, timeout=None, log_output=True),
-        
-        
+        call(["adb", "-s", test_adb_id, "shell", "whoami"], assert_ok=True, regrep=None, timeout=30, log_output=True),
+        call(["adb", "-s", test_adb_id, "shell", "disable-verity"], assert_ok=False, regrep=None, timeout=30, log_output=True),
+        call(["adb", "-s", test_adb_id, "shell", "remount"], assert_ok=False, regrep=None, timeout=30, log_output=True),
+
+
         # REBOOT AND WAIT
-        
+
         call(
             [
                 "adb",
@@ -353,10 +353,10 @@ def test_adb_mount_filesytem_as_root_unable_to_remount(mock_execute):
             ],
             assert_ok=True,
             regrep=None,
-            timeout=None,
+            timeout=30,
             log_output=True
         ),
-        call(["adb", "-s", test_adb_id, "shell", "reboot"], assert_ok=True, regrep=None, timeout=None, log_output=True),
+        call(["adb", "-s", test_adb_id, "shell", "reboot"], assert_ok=True, regrep=None, timeout=30, log_output=True),
         call([
                 "adb",
                 "-s",
@@ -367,15 +367,15 @@ def test_adb_mount_filesytem_as_root_unable_to_remount(mock_execute):
             ],
             assert_ok=True,
             regrep=None,
-            timeout=None,
+            timeout=30,
             log_output=False
         ),
-        call(["adb", "-s", test_adb_id, "shell", "getprop", "sys.boot_completed"], assert_ok=False, regrep=None, timeout=None, log_output=False),
+        call(["adb", "-s", test_adb_id, "shell", "getprop", "sys.boot_completed"], assert_ok=False, regrep=None, timeout=30, log_output=False),
         call(["adb", "-s", test_adb_id, "get-state"], assert_ok=False, regrep=None, timeout=5, log_output=False),
-        call(["adb", "-s", test_adb_id, "shell", "whoami"], assert_ok=True, regrep=None, timeout=None, log_output=True),
-        call(["adb", "-s", test_adb_id, "root"], assert_ok=False, regrep=None, timeout=None, log_output=True),
+        call(["adb", "-s", test_adb_id, "shell", "whoami"], assert_ok=True, regrep=None, timeout=30, log_output=True),
+        call(["adb", "-s", test_adb_id, "root"], assert_ok=False, regrep=None, timeout=30, log_output=True),
         call(["adb", "-s", test_adb_id, "get-state"], assert_ok=False, regrep=None, timeout=5, log_output=False),
-        call(["adb", "-s", test_adb_id, "shell", "whoami"], assert_ok=True, regrep=None, timeout=None, log_output=True),
-        call(["adb", "-s", test_adb_id, "shell", "remount"], assert_ok=False, regrep=None, timeout=None, log_output=True),
+        call(["adb", "-s", test_adb_id, "shell", "whoami"], assert_ok=True, regrep=None, timeout=30, log_output=True),
+        call(["adb", "-s", test_adb_id, "shell", "remount"], assert_ok=False, regrep=None, timeout=30, log_output=True),
     ]
     mock_execute.assert_has_calls(calls)

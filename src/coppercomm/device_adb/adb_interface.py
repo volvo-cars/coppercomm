@@ -384,7 +384,7 @@ class Adb:
         self.trigger_reboot(mode)
 
         last_e = None
-        _logger.info(f"Waiting for new android boot_id (timeout %ds)", timeout)
+        _logger.info("Waiting for new android boot_id (timeout %ds)", timeout)
         while datetime.datetime.now() < datetime_timeout:
             try:
                 time.sleep(1)
@@ -394,7 +394,7 @@ class Adb:
             except AssertionError as e:
                 last_e = e
 
-        raise AssertionError(f"Failed to restart over adb") from last_e
+        raise AssertionError("Failed to restart over adb") from last_e
 
     @property
     def device_id(self):
