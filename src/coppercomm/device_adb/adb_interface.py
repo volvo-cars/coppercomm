@@ -38,6 +38,7 @@ class DeviceState(enum.Enum):
     RECOVERY = "recovery"
     OFFLINE = "offline"
     UNAUTHORIZED = "unauthorized"
+    NO_ADB_DEVICE = "not found"
 
 
 class Adb:
@@ -166,7 +167,7 @@ class Adb:
         """
         Get current device state
 
-        :returns: Current DeviceState (DeviceState.DEVICE/DeviceState.RECOVERY)
+        :returns: Current DeviceState
         """
         current_state = self.check_output("get-state", shell=False, timeout=5, assert_ok=False, log_output=False)
         if "daemon started successfully" in current_state:
@@ -177,12 +178,10 @@ class Adb:
             )
         if "unauthorized" in current_state:
             return DeviceState.UNAUTHORIZED
-        if (
-            "not found" in current_state
-            or "no devices/emulators found" in current_state
-            or "device offline" in current_state
-        ):
+        if "offline" in current_state:
             return DeviceState.OFFLINE
+        if "no devices/emulators found" in current_state or "not found" in current_state:
+            return DeviceState.NO_ADB_DEVICE
         return DeviceState(current_state.strip())
 
     def kill_server(self, log_output: bool = True) -> str:
