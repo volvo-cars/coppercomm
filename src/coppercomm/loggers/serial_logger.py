@@ -41,14 +41,15 @@ def duplicate_console_logs_to_file(serial: typing.Optional[ConsoleInterface], lo
     :param serial: Instance of serial console.
     :param log_path: path to log file
     """
-    if serial and log_path:
-        log_path_handler = logging.FileHandler(log_path)
-        log_path_handler.setLevel(logging.DEBUG)
-        serial.console_object.logger.addHandler(log_path_handler)
-        yield
-    else:
-        log_path_handler = None
-        yield
-
-    if log_path_handler:
-        serial.console_object.logger.removeHandler(log_path_handler)
+    try:
+        if serial and log_path:
+            log_path_handler = logging.FileHandler(log_path)
+            log_path_handler.setLevel(logging.DEBUG)
+            serial.console_object.logger.addHandler(log_path_handler)
+            yield
+        else:
+            log_path_handler = None
+            yield
+    finally:
+        if serial and log_path_handler:
+            serial.console_object.logger.removeHandler(log_path_handler)
