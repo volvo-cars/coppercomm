@@ -180,7 +180,11 @@ class Adb:
             return DeviceState.UNAUTHORIZED
         if "offline" in current_state:
             return DeviceState.OFFLINE
-        if "no devices/emulators found" in current_state or "not found" in current_state:
+        if (
+            "no devices/emulators found" in current_state
+             or "not found" in current_state
+             or "cannot connect to daemon" in current_state
+        ):
             return DeviceState.NO_ADB_DEVICE
         return DeviceState(current_state.strip())
 
