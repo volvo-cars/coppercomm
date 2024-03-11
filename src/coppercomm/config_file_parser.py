@@ -140,6 +140,10 @@ class Config:
     def get_network_configuraiton_data(self) -> dict:
         return self.device_config_data["NETWORK"]
 
+    @throw_config_error_on_value_missing_in_config
+    def get_fuse_key_type(self) -> str:
+        return self.device_config_data["FUSED_WITH_KEY"]
+
     def get_name_of_available_serials_in_config(self):
         serials = []
         for attr in self.device_config_data:
