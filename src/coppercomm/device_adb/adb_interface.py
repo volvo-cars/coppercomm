@@ -172,6 +172,8 @@ class Adb:
         current_state = self.check_output("get-state", shell=False, timeout=5, assert_ok=False, log_output=False)
         if "daemon started successfully" in current_state:
             current_state = self.check_output("get-state", shell=False, timeout=5, assert_ok=False, log_output=False)
+        if "device still authorizing" in current_state:
+            current_state = self.check_output("get-state", shell=False, timeout=5, assert_ok=False, log_output=False)
         if "more than one" in current_state:
             raise CopperCommmError(
                 "More than one ADB device is connected. 'adb_device_id' must be specified to read device state!"
