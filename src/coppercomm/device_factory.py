@@ -33,7 +33,7 @@ class DeviceFactory:
         return Adb(self.config.get_adb_device_id())
 
     def create_phone_adb(self) -> typing.List[Adb]:
-        return [Adb(device_id) for device_id in self.config.get_extra_devices_ids()]
+        return [Adb(phone["ADB_DEVICE_ID"]) for phone in self.config.get_extra_devices(device_type="android_phone")]
 
     def create_ssh_over_adb(self, adb: Adb) -> SSHConnection:
         # try to wait a bit for adb in case unit was just rebooted

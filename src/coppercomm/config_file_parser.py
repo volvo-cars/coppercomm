@@ -42,6 +42,7 @@ class SerialDeviceType(Enum):
     QNX = "QNX"
     SupportCPU = "SupportCPU"
 
+
 class Config:
     """Class that contains device configuration information."""
 
@@ -73,7 +74,6 @@ class Config:
                     return False
         return True
 
-
     @throw_config_error_on_value_missing_in_config
     def get_serial_device_path(self, serial_device: str) -> str:
         return self.device_config_data[serial_device]["tty"]
@@ -90,11 +90,6 @@ class Config:
         return self.device_config_data["FASTBOOT"]["fastboot_device_id"]
 
     @throw_config_error_on_value_missing_in_config
-    def get_extra_devices_ids(self) -> List[str]:
-        """Get the list with extra devices ids."""
-        return [device["ADB_DEVICE_ID"] for device in self.device_config_data["EXTRA_DEVICES"]]
-
-    @throw_config_error_on_value_missing_in_config
     def get_device_name(self) -> str:
         return self.device_config_data["DEVICE"]
 
@@ -103,14 +98,21 @@ class Config:
         return self.device_config_data["PRODUCT_NAME"]
 
     @throw_config_error_on_value_missing_in_config
-    def get_extra_devices_product_names(self) -> List[str]:
-        """Get the list with extra devices product names."""
-        return [device["PRODUCT_NAME"] for device in self.device_config_data["EXTRA_DEVICES"]]
+    def get_extra_devices(self, device_type: Optional[str] = None) -> List[dict]:
+        """Get the list with extra devices.
 
-    @throw_config_error_on_value_missing_in_config
-    def get_extra_devices_types(self) -> List[str]:
-        """Get the list with extra devices types."""
-        return [device["TYPE"] for device in self.device_config_data["EXTRA_DEVICES"]]
+        Each extra device is a dictionary with the mandatory TYPE key.
+
+        :param device_type: Type of the extra device to get e.g. android_phone, ios_phone, dhu, etc...
+        """
+        if device_type:
+            return [
+                device
+                for device in self.device_config_data["EXTRA_DEVICES"]
+                if device["DEVICE_TYPE"] == device_type
+            ]
+        else:
+            return self.device_config_data["EXTRA_DEVICES"]
 
     @throw_config_error_on_value_missing_in_config
     def get_qnx_ip(self) -> str:
@@ -147,7 +149,7 @@ class Config:
     def get_name_of_available_serials_in_config(self):
         serials = []
         for attr in self.device_config_data:
-            if "tty" in self.device_config_data[attr]: # tty mean its serial_device
+            if "tty" in self.device_config_data[attr]:  # tty mean its serial_device
                 serials.append(attr)
         return serials
 
