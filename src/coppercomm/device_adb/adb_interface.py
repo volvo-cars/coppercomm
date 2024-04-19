@@ -229,6 +229,7 @@ class Adb:
         state: typing.Union[str, DeviceState] = DeviceState.DEVICE,
         *,
         timeout: float = 120,
+        polling_interval: float = 2,
     ) -> None:
         """
         Wait for device in given state (adb wait-for-*)
@@ -248,7 +249,7 @@ class Adb:
                 elif cur_state == expected_state:
                     self._log("Device in {} state".format(expected_state))
                     return
-            time.sleep(2)
+            time.sleep(polling_interval)
         raise Exception(f"Android state '{cur_state}' != {expected_state} after {timeout}s!")
 
     def wait_for_boot_complete(self, timeout: float = 240) -> None:

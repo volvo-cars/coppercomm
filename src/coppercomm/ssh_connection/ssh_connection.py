@@ -116,11 +116,12 @@ class SSHConnection:
         timeout: float = 30.0,
         tcp_timeout: float = 5.0,
         keepalive_interval: int = 5,
+        retry_delay: float = 2.0,
     ) -> None:
         if not self.connected:
             try:
                 with SSHConnection._ssh_mutex:
-                    self._wait_for_connection(timeout=timeout, tcp_timeout=tcp_timeout)
+                    self._wait_for_connection(timeout=timeout, retry_delay=retry_delay, tcp_timeout=tcp_timeout)
                     if keepalive_interval is not None:
                         transport = self.sshclient.get_transport()
                         if transport:
