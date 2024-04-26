@@ -188,8 +188,8 @@ class Adb:
             return DeviceState.OFFLINE
         if (
             "no devices/emulators found" in current_state
-             or "not found" in current_state
-             or "cannot connect to daemon" in current_state
+            or "not found" in current_state
+            or "cannot connect to daemon" in current_state
         ):
             return DeviceState.NO_ADB_DEVICE
         return DeviceState(current_state.strip())
@@ -389,13 +389,13 @@ class Adb:
     def reboot_and_wait(self, timeout=120, mode=None):
         initial_boot_id = self.get_boot_id()
 
-        datetime_timeout = datetime.datetime.now() + datetime.timedelta(seconds=timeout)
+        datetime_timeout = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=timeout)
 
         self.trigger_reboot(mode)
 
         last_e = None
         _logger.info("Waiting for new android boot_id (timeout %ds)", timeout)
-        while datetime.datetime.now() < datetime_timeout:
+        while datetime.datetime.now(tz=datetime.timezone.utc) < datetime_timeout:
             try:
                 time.sleep(1)
                 if initial_boot_id != (boot_id := self.get_boot_id(log_output=False)):
@@ -469,3 +469,29 @@ class Adb:
         output = subprocess.check_output(["adb", "--version"])
         version = int(output.splitlines()[1].split()[1].partition(b".")[0])
         return version
+
+    def list_available_system_services(self) -> typing.List[str]:
+        """Get available system services on the device.
+
+        :return: List of available system services
+        """
+        output = self.shell("service list", assert_ok=False, log_output=False)
+        # Output is of the form:
+        # Found 123 services:
+        # 0   service: [android.ab.cd]
+        return [line.split()[1].rstrip(":") for line in output.split("\n")[1:] if line.strip()]
+
+    def wait_for_system_service_availability(self, service, timeout: int = 5) -> None:
+        """Wait for a system service to become available on the device.
+
+        :param service: Name of the service to wait for
+        :param timeout: Timeout in seconds
+        :raises: Exception if service is not available after timeout
+        """
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            available_services = self.list_available_system_services()
+            if service in available_services:
+                return
+            time.sleep(0.5)
+        raise AssertionError(f"Service {service} is not available after {timeout}s.")
