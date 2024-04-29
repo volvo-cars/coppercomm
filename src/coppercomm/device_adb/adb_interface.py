@@ -432,7 +432,7 @@ class Adb:
         self.reboot_and_wait(mode="recovery")
         self.wait_for_state(DeviceState.RECOVERY, timeout=120)
         self.gain_root_permissions()
-        self.shell("recovery --wipe_data")
+        self.shell("recovery --wipe_data", timeout=120)
         self.wait_for_state(DeviceState.DEVICE)
         self.wait_for_boot_complete()
 
