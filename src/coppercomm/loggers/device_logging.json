@@ -1,0 +1,39 @@
+{
+    "version": 1,
+    "disable_existing_loggers": false,
+    "formatters": {
+        "simple": {
+            "format": "%(asctime)s %(name)016s - %(levelname)07s - %(message)s",
+            "datefmt": "%H:%M:%S"
+        },
+        "serial_formatter": {
+            "format": "%(asctime)s %(name)s >> %(message)s",
+            "datefmt": "%H:%M:%S"
+        }
+    },
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+            "level": "INFO",
+            "formatter": "simple",
+            "stream": "ext://sys.stdout"
+        },
+        "file_handler": {
+            "class": "logging.FileHandler",
+            "level": "DEBUG",
+            "formatter": "simple",
+            "filename": "tester_will_be_auto_replaced.log",
+            "encoding": "utf8"
+        }
+    },
+    "loggers": {
+        "device": {
+            "level": "DEBUG",
+            "handlers": [
+                "console",
+                "file_handler"
+            ],
+            "propagate": 1
+        }
+    }
+}
