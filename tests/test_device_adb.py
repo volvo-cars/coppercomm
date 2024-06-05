@@ -192,7 +192,7 @@ def test_adb_trigger_reboot(mock_execute):
     mock_execute.return_value = None
     adb_interface.Adb(adb_device_id=test_adb_id).trigger_reboot()
     mock_execute.assert_called_once_with(
-        ["adb", "-s", test_adb_id, "shell", "reboot"], assert_ok=True, regrep=None, timeout=30, log_output=True
+        ["adb", "-s", test_adb_id, "reboot"], assert_ok=True, regrep=None, timeout=30, log_output=True
     )
 
 
@@ -216,7 +216,7 @@ def test_adb_reboot_and_wait(mock_execute):
             timeout=30,
             log_output=True,
         ),
-        call(["adb", "-s", test_adb_id, "shell", "reboot"], assert_ok=True, regrep=None, timeout=30, log_output=True),
+        call(["adb", "-s", test_adb_id, "reboot"], assert_ok=True, regrep=None, timeout=30, log_output=True),
         call(
             [
                 "adb",
@@ -260,7 +260,7 @@ def test_adb_reboot_and_wait_unable_to_reboot(mock_execute):
             timeout=30,
             log_output=True,
         ),
-        call(["adb", "-s", test_adb_id, "shell", "reboot"], assert_ok=True, regrep=None, timeout=30, log_output=True),
+        call(["adb", "-s", test_adb_id, "reboot"], assert_ok=True, regrep=None, timeout=30, log_output=True),
         call(
             [
                 "adb",
@@ -359,7 +359,7 @@ def test_adb_mount_filesytem_as_root_unable_to_remount(mock_execute):
             timeout=30,
             log_output=True,
         ),
-        call(["adb", "-s", test_adb_id, "shell", "reboot"], assert_ok=True, regrep=None, timeout=30, log_output=True),
+        call(["adb", "-s", test_adb_id, "reboot"], assert_ok=True, regrep=None, timeout=30, log_output=True),
         call(
             [
                 "adb",

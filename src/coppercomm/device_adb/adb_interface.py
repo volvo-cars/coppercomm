@@ -376,15 +376,15 @@ class Adb:
         return boot_id
 
     def trigger_reboot(self, mode=None):
-        """Trigger adb shell reboot.
+        """Trigger adb reboot.
 
         :param mode: Allows to specify reboot mode e.g. recovery or fastboot
         """
         _logger.info("Triggering reboot over adb")
         if mode:
-            self.shell(f"reboot {mode}")
+            self.check_output(f"reboot {mode}")
         else:
-            self.shell("reboot")
+            self.check_output("reboot")
 
     def reboot_and_wait(self, timeout=120, mode=None):
         initial_boot_id = self.get_boot_id()
