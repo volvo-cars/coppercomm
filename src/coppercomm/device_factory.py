@@ -35,21 +35,29 @@ class DeviceFactory:
     def create_phone_adb(self) -> typing.List[Adb]:
         return [Adb(phone["ADB_DEVICE_ID"]) for phone in self.config.get_extra_devices(device_type="android_phone")]
 
-    def create_ssh_over_adb(self, adb: Adb) -> SSHConnection:
-        # try to wait a bit for adb in case unit was just rebooted
-        adb.wait_for_state(timeout=10)
-        # forward port to host, android have ssh tunnel to qnx.
-        # localhost <--> android <--> qnx:
-        local_ssh_port = self.config.get_host_adb_sshport()
-        adb.check_output(f"forward tcp:{local_ssh_port} tcp:22")
-        return SSHConnection(ip="127.0.0.1", port=local_ssh_port)
+    def create_ssh_over_adb(self) -> SSHConnection:
+        port = self.config.get("QNX.port", 22)
+        proxy_command = self.config["QNX.proxy_command"]
+        return SSHConnection(ip=self.config.get_qnx_ip(), port=port, proxy_command=proxy_command)
 
     def create_broadrreach_ssh(self) -> SSHConnection:
+        if self.config.has_entry("QNX.proxy_command"):
+            # Network adapter is not connected. Use SSH over ADB.
+            raise ConfigFileParseError("No network data defined in the config.")
+        ip = self.config["QNX.ip"]
+        port = self.config.get("QNX.port", 22)
+        return SSHConnection(ip=ip, port=port)
+
+    def create_qnx_ssh(self) -> SSHConnection:
+        """Create SSHConnection object based on the config file.
+
+        :return: Object that use either SSH over network adapter or SSH over ADB.
+        :raises ConfigFileParseError: If nothing is available.
+        """
         try:
-            port = self.config.get_qnx_port()
+            return self.create_broadrreach_ssh()
         except ConfigFileParseError:
-            port = "22"
-        return SSHConnection(ip=self.config.get_qnx_ip(), port=port)
+            return self.create_ssh_over_adb()
 
     def create_serial(self, serial_device_type: str) -> SerialConnection:
         if serial_device_type not in self.config.get_name_of_available_serials_in_config():

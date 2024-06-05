@@ -74,6 +74,44 @@ class Config:
                     return False
         return True
 
+    def get(self, entry_path: str, default = None):
+        """Get entry under given path or return default value.
+
+        Example:
+            >>> config.get("ADB.adb_device_id")
+            "123456"
+
+        param: entry_path: Path to entry in config file. Path parts are separated by dot.
+        return: value if entry exists, default value otherwise.
+        """
+        try:
+            return self[entry_path]
+        except ConfigFileParseError:
+            return default
+
+    @throw_config_error_on_value_missing_in_config
+    def __getitem__(self, entry_path: str):
+        """Get item at given entry_path or raise ConfigFileParseError if not found.
+
+        Example:
+            >>> config["ADB.adb_device_id"]
+            "123456"
+        """
+        path_parts = entry_path.split(".")
+        pos_pointer = self.device_config_data
+        for part_name in path_parts:
+            if isinstance(pos_pointer, dict):
+                if part_name not in pos_pointer:
+                    raise KeyError(f"{part_name} not in {pos_pointer}")
+                pos_pointer = pos_pointer[part_name]
+            else:
+                try:
+                    index = int(part_name)
+                    pos_pointer = pos_pointer[index]
+                except ValueError:
+                    raise KeyError(f"{part_name} is not a valid index")
+        return pos_pointer
+
     @throw_config_error_on_value_missing_in_config
     def get_serial_device_path(self, serial_device: str) -> str:
         return self.device_config_data[serial_device]["tty"]
@@ -125,10 +163,6 @@ class Config:
     @throw_config_error_on_value_missing_in_config
     def get_config_version(self) -> str:
         return self.device_config_data.get("version", "1")
-
-    @throw_config_error_on_value_missing_in_config
-    def get_host_adb_sshport(self) -> str:
-        return self.device_config_data["HOST"]["adb_ssh_port"]
 
     @throw_config_error_on_value_missing_in_config
     def get_host_ip_address(self) -> str:

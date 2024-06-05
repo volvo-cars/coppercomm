@@ -9,7 +9,8 @@
   "QNX": {
     "usb_serial_mac_id": "",
     "tty": "/dev/ttyUSB1",
-    "ip" : "x.x.x.x"
+    "ip" : "x.x.x.x",
+    "proxy_command": "adb -s 0x20693c6c shell su 0 nc x.x.x.x 22"
   },
   "DEVICE": "device1",
   "HOST": {

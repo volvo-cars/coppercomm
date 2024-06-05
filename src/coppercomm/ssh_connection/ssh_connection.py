@@ -18,11 +18,10 @@ from pathlib import Path
 from time import sleep
 import fnmatch
 
-from paramiko import Channel, MissingHostKeyPolicy, SFTPClient, SSHException
+from paramiko import Channel, MissingHostKeyPolicy, SFTPClient, SSHException, ProxyCommand
 from paramiko.channel import ChannelFile, ChannelStderrFile
 from paramiko.client import SSHClient
-from paramiko.ssh_exception import (AuthenticationException,
-                                    NoValidConnectionsError)
+from paramiko.ssh_exception import AuthenticationException, NoValidConnectionsError
 
 logger = logging.getLogger("SSHConnection")
 
@@ -73,7 +72,12 @@ class SSHConnection:
     _ssh_mutex = threading.Lock()
 
     def __init__(
-        self, ip: str, port: str = "22", username: str = "root", password: str = ""
+        self,
+        ip: str,
+        port: str = "22",
+        username: str = "root",
+        password: str = "",
+        proxy_command: typing.Optional[str] = None,
     ) -> None:
         with SSHConnection._ssh_mutex:
             self.sshclient = SSHClient()
@@ -81,11 +85,10 @@ class SSHConnection:
             self.port = int(port)
             self.username = username
             self.password = password
+            self.proxy_command = proxy_command
             self.sshclient.set_missing_host_key_policy(IgnoreHostKeys())
 
-    def _wait_for_connection(
-        self, timeout: float = 30, retry_delay: float = 2.0, tcp_timeout: float = 5.0
-    ):
+    def _wait_for_connection(self, timeout: float = 30, retry_delay: float = 2.0, tcp_timeout: float = 5.0):
         """Retry connection attempt until it is successfull or timeout occures."""
         end_time = time.monotonic() + timeout
 
@@ -98,6 +101,7 @@ class SSHConnection:
                     password=self.password,
                     timeout=tcp_timeout,
                     banner_timeout=60,
+                    sock=typing.cast(Channel, ProxyCommand(self.proxy_command)) if self.proxy_command else None
                 )
                 if self.connected:
                     return
@@ -153,9 +157,7 @@ class SSHConnection:
         if self.connected:
             self.sshclient.close()
 
-    def _is_exit_status_ready(
-        self, channel: Channel, timeout: typing.Optional[int] = 5
-    ) -> bool:
+    def _is_exit_status_ready(self, channel: Channel, timeout: typing.Optional[int] = 5) -> bool:
         if timeout is None:
             return False
         start_time = time.monotonic()
@@ -175,9 +177,7 @@ class SSHConnection:
             transport = self.sshclient.get_transport()
             if transport is None:
                 raise OSError("Can't get transport from ssh client!")
-            channel = transport.open_channel(
-                kind="session", timeout=open_channel_timeout
-            )
+            channel = transport.open_channel(kind="session", timeout=open_channel_timeout)
             channel.settimeout(command_exec_timeout)
             stdout = channel.makefile("rb")
             stderr = channel.makefile_stderr("rb")
@@ -198,9 +198,7 @@ class SSHConnection:
             )
             channel.exec_command(command=command)
         except (NoValidConnectionsError, OSError, socket.timeout, EOFError):
-            raise SSHConnectionError(
-                f"Failed to open channel or execute command: '{command}'"
-            )
+            raise SSHConnectionError(f"Failed to open channel or execute command: '{command}'")
 
         if self._is_exit_status_ready(channel=channel, timeout=command_exec_timeout):
             exitcode = channel.recv_exit_status()
@@ -220,7 +218,11 @@ class SSHConnection:
         tries=1,
         open_channel_timeout: int = 10,
         connect_timeout: float = 30.0,
-    ) -> typing.Tuple[ChannelFile, ChannelStderrFile, typing.Optional[int],]:
+    ) -> typing.Tuple[
+        ChannelFile,
+        ChannelStderrFile,
+        typing.Optional[int],
+    ]:
         if tries < 1:
             raise ValueError("Number of 'tries' must be >= 1")
         for _ in range(tries):
@@ -248,9 +250,7 @@ class SSHConnection:
             channel.get_pty()
             channel.exec_command(command=command)
         except (NoValidConnectionsError, OSError, socket.timeout, EOFError):
-            raise SSHConnectionError(
-                f"Failed to open channel or execute command: '{command}'"
-            )
+            raise SSHConnectionError(f"Failed to open channel or execute command: '{command}'")
 
         return channel, stdout, stderr, None
 
@@ -303,13 +303,11 @@ class SSHConnection:
                 if _is_file(remote_path, sftp):
                     local_dir.mkdir(parents=True, exist_ok=True)
                     return self.get(remote_path.as_posix(), local_dir.joinpath(remote_path.name).as_posix())
-            except IOError: # Pattern or dir was given?
+            except IOError:  # Pattern or dir was given?
                 pass
             _get_all(remote_path, local_dir, sftp)
 
-    def put(
-        self, localpath: str, remotepath: str, chmod: typing.Optional[int] = None
-    ) -> None:
+    def put(self, localpath: str, remotepath: str, chmod: typing.Optional[int] = None) -> None:
         """Copy file to remote path.
 
         Note: SFTPClient requires that file name must be included in remote path.
@@ -325,9 +323,7 @@ class SSHConnection:
                         return
         raise SFTPTransferFailed(f"Failed to put {localpath} to {remotepath}")
 
-    def put_all(
-        self, source: Path, remote_dir: Path, chmod: typing.Optional[int] = None
-    ):
+    def put_all(self, source: Path, remote_dir: Path, chmod: typing.Optional[int] = None):
         """Copy file or whole directory to remote path.
 
         If remote directory already exists:
@@ -339,9 +335,7 @@ class SSHConnection:
         :param chmod: When defined, set given permission to all files/dirs.
         """
         if source.is_file():
-            return self.put(
-                source.as_posix(), remote_dir.joinpath(source.name).as_posix()
-            )
+            return self.put(source.as_posix(), remote_dir.joinpath(source.name).as_posix())
 
         self.connect(tcp_timeout=10)
         if not self.connected:
@@ -358,9 +352,8 @@ class SSHConnection:
                 logger.debug("Make remote dir: %s", dest_dir_str)
                 sftp.mkdir(dest_dir_str)
             _put_all(source, remote_dir / source.name, sftp, chmod)
-            sftp.chmod(
-                dest_dir_str, chmod if chmod else (source.stat().st_mode & 0o777)
-            )
+            sftp.chmod(dest_dir_str, chmod if chmod else (source.stat().st_mode & 0o777))
+
 
 def _put(
     local_path: Path,
@@ -370,9 +363,7 @@ def _put(
 ):
     logger.debug("Copy %s to %s", local_path, remotepath)
     sftp.put(local_path.as_posix(), remotepath.as_posix())
-    sftp.chmod(
-        remotepath.as_posix(), chmod if chmod else (local_path.stat().st_mode & 0o777)
-    )
+    sftp.chmod(remotepath.as_posix(), chmod if chmod else (local_path.stat().st_mode & 0o777))
 
 
 def _put_all(
@@ -397,13 +388,16 @@ def _put_all(
         else:
             logger.warning("SFTP dont know how to copy path: %s", path)
 
+
 def _is_dir(remote_path, sftp):
     stat = sftp.stat(remote_path.as_posix())
     return stat.st_mode >> 9 == 32
 
+
 def _is_file(remote_path, sftp):
     stat = sftp.stat(remote_path.as_posix())
     return stat.st_mode >> 9 == 64
+
 
 def _get_all(remote_path: Path, local_dir: Path, sftp: SFTPClient) -> None:
     """Get files from remote_path to local_dir.

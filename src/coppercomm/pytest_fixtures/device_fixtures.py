@@ -51,16 +51,33 @@ def adb_phone(device_factory: DeviceFactory) -> typing.List[Adb]:
 
 
 @pytest.fixture(scope="session")
-def qnx_ssh_over_adb(device_factory: DeviceFactory, adb: Adb) -> SSHConnection:
-    return device_factory.create_ssh_over_adb(adb)
+def qnx_ssh_over_adb(device_factory: DeviceFactory) -> typing.Optional[SSHConnection]:
+    """SSH connection to QNX over ADB."""
+    try:
+        return device_factory.create_ssh_over_adb()
+    except Exception:
+        return None
 
 
 @pytest.fixture(scope="session")
 def qnx_broadrreach_ssh(device_factory: DeviceFactory) -> typing.Optional[SSHConnection]:
+    """SSH connection to QNX over BroadR-Reach."""
     try:
         return device_factory.create_broadrreach_ssh()
     except Exception:
         return None
+
+
+@pytest.fixture(scope="session")
+def qnx_ssh(
+    qnx_broadrreach_ssh: typing.Optional[SSHConnection], qnx_ssh_over_adb: typing.Optional[SSHConnection]
+) -> typing.Optional[SSHConnection]:
+    """Pick one of the available SSH connections."""
+    if qnx_broadrreach_ssh:
+        return qnx_broadrreach_ssh
+    if qnx_ssh_over_adb:
+        return qnx_ssh_over_adb
+    return None
 
 
 @pytest.fixture(scope="session")
