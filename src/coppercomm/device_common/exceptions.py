@@ -25,7 +25,7 @@ class PatternNotFoundError(CommandExecutionError):
     pass
 
 
-class CopperCommmError(AssertionError):
+class CopperCommError(AssertionError):
     pass
 
 
@@ -33,7 +33,7 @@ class RemountError(Exception):
     """Unable to mount the filesystem"""
 
 
-class CopperCommConnectionError(CopperCommmError):
+class CopperCommConnectionError(CopperCommError):
     def __init__(self, message="Unknown error"):
         message += "\nCheck if serial ports (UART) and ADB are correctly connected"
         super().__init__(message)

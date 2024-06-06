@@ -22,7 +22,7 @@ import time
 import typing
 from typing import Union
 
-from coppercomm.device_common.exceptions import CommandFailedError, CopperCommmError, RemountError
+from coppercomm.device_common.exceptions import CommandFailedError, CopperCommError, RemountError
 from coppercomm.device_common.local_console import execute_command
 
 _logger = logging.getLogger("adb_interface")
@@ -179,7 +179,7 @@ class Adb:
             max_retries -= 1
 
         if "more than one" in current_state:
-            raise CopperCommmError(
+            raise CopperCommError(
                 "More than one ADB device is connected. 'adb_device_id' must be specified to read device state!"
             )
         if "unauthorized" in current_state:
