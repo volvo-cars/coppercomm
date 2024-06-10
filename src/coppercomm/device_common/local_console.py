@@ -17,7 +17,7 @@ import shlex
 import subprocess
 import sys
 import typing
-from typing import Union
+from typing import Union, Collection
 
 from coppercomm.device_common.exceptions import CommandFailedError, TimeoutExpiredError, PatternNotFoundError
 
@@ -45,7 +45,8 @@ def execute_command(
     cwd: typing.Optional[Pathish] = None,
     pattern: typing.Optional[str] = None,
     regrep: typing.Union[str, typing.Pattern[str], None] = None,
-    log_output: bool = True
+    log_output: bool = True,
+    valid_exit_codes: Collection[int] =(0,)
 ) -> str:
     """
     Execute command with subprocess and search for given pattern if provided
@@ -57,6 +58,7 @@ def execute_command(
     :param pattern: pattern to search for in output
     :param regrep: Regex/string to use to filter the output of the command
     :param log_output: Whether to send command output to the logger
+    :param valid_exit_codes: list of exit codes to consider command successful
     :return: output of command if pattern is None - matched fragment otherwise
     :raises: CommandFailedError if assert_ok is True and returncode != 0
         TimeoutExpiredError if timeout expired and command not finished
@@ -100,7 +102,7 @@ def execute_command(
 
     if log_output:
         _logger.debug("Output of %s:\n%s", command, cmd_output)
-    if assert_ok and completed_process.returncode != 0:
+    if assert_ok and completed_process.returncode not in valid_exit_codes:
         raise CommandFailedError(
             "Cmd {} failed with returncode {}".format(
                 command, completed_process.returncode

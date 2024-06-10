@@ -20,9 +20,13 @@ import shlex
 import subprocess
 import time
 import typing
-from typing import Union
+from typing import Union, Collection
 
-from coppercomm.device_common.exceptions import CommandFailedError, CopperCommError, RemountError
+from coppercomm.device_common.exceptions import (
+    CommandFailedError,
+    CopperCommError,
+    RemountError,
+)
 from coppercomm.device_common.local_console import execute_command
 
 _logger = logging.getLogger("adb_interface")
@@ -66,6 +70,7 @@ class Adb:
         regrep: typing.Union[str, typing.Pattern[str], None] = None,
         timeout: typing.Optional[float] = 30,
         log_output: bool = True,
+        valid_exit_codes: Collection = (0,),
     ) -> str:
         """
         Execute command on adb device. If 'command' passed as a string it will be splitted by shlex.split
@@ -76,6 +81,7 @@ class Adb:
         :param regrep: Filter lines in the output of the command with regex
         :param timeout: Timeout for a command
         :param log_output: Whether to send output to the logger
+        :param valid_exit_codes: List of exit codes to consider command successful
         :returns: Command's output (stdout and stderr combined)
         """
 
@@ -85,7 +91,14 @@ class Adb:
             command.insert(0, "shell")
 
         adb_command = self._adb_cmd + command
-        return execute_command(adb_command, assert_ok=assert_ok, regrep=regrep, timeout=timeout, log_output=log_output)
+        return execute_command(
+            adb_command,
+            assert_ok=assert_ok,
+            regrep=regrep,
+            timeout=timeout,
+            log_output=log_output,
+            valid_exit_codes=valid_exit_codes,
+        )
 
     def shell(
         self,
@@ -95,6 +108,7 @@ class Adb:
         regrep: typing.Union[str, typing.Pattern[str], None] = None,
         timeout: typing.Optional[float] = 30,
         log_output: bool = True,
+        valid_exit_codes: Collection = (0,),
     ) -> str:
         """
         Same as using check_output with shell=True argument
@@ -104,17 +118,30 @@ class Adb:
         :param regrep: Filter lines in the output of the command with regex
         :param timeout: Timeout for a command
         :param log_output: Whether to send output to the logger
+        :param valid_exit_codes: List of exit codes to consider command successful
         :returns: Command's output (stdout and stderr combined)
         """
         return self.check_output(
-            command, shell=True, assert_ok=assert_ok, regrep=regrep, timeout=timeout, log_output=log_output
+            command,
+            shell=True,
+            assert_ok=assert_ok,
+            regrep=regrep,
+            timeout=timeout,
+            log_output=log_output,
+            valid_exit_codes=valid_exit_codes,
         )
 
     def is_userdebug(self) -> bool:
         """Check the build type of the device. If userdebug return True, otherwise False."""
-        return True if self.shell("getprop ro.build.type").strip() == "userdebug" else False
+        return (
+            True
+            if self.shell("getprop ro.build.type").strip() == "userdebug"
+            else False
+        )
 
-    def _change_root_permissions(self, *, timeout: float, retries: int, root: bool) -> None:
+    def _change_root_permissions(
+        self, *, timeout: float, retries: int, root: bool
+    ) -> None:
         requested_user = "root" if root else "shell"
         command = "root" if root else "unroot"
         self._log(f"Restarting ADB in {requested_user} user mode...")
@@ -134,7 +161,9 @@ class Adb:
             try:
                 new_user = self.shell("whoami").strip()
                 if new_user != requested_user:
-                    raise CommandFailedError(f"Switching ADB to {requested_user} user failed: got {new_user} instead")
+                    raise CommandFailedError(
+                        f"Switching ADB to {requested_user} user failed: got {new_user} instead"
+                    )
                 return
             except AssertionError as exc:
                 self._log(f"User verification attempt {attempt} failed: {exc}")
@@ -169,13 +198,19 @@ class Adb:
 
         :returns: Current DeviceState
         """
-        current_state = self.check_output("get-state", shell=False, timeout=5, assert_ok=False, log_output=False)
+        current_state = self.check_output(
+            "get-state", shell=False, timeout=5, assert_ok=False, log_output=False
+        )
         if "daemon started successfully" in current_state:
-            current_state = self.check_output("get-state", shell=False, timeout=5, assert_ok=False, log_output=False)
+            current_state = self.check_output(
+                "get-state", shell=False, timeout=5, assert_ok=False, log_output=False
+            )
         max_retries = 10
         while max_retries > 0 and "device still authorizing" in current_state:
             time.sleep(1)
-            current_state = self.check_output("get-state", shell=False, timeout=5, assert_ok=False, log_output=False)
+            current_state = self.check_output(
+                "get-state", shell=False, timeout=5, assert_ok=False, log_output=False
+            )
             max_retries -= 1
 
         if "more than one" in current_state:
@@ -256,20 +291,27 @@ class Adb:
                     self._log("Device in {} state".format(expected_state))
                     return
             time.sleep(polling_interval)
-        raise Exception(f"Android state '{cur_state}' != {expected_state} after {timeout}s!")
+        raise Exception(
+            f"Android state '{cur_state}' != {expected_state} after {timeout}s!"
+        )
 
     def wait_for_boot_complete(self, timeout: float = 240) -> None:
         """Wait for android to completely boot up.
 
         Waits for property: sys.boot_completed == 1
         """
-        _logger.debug("Waiting for android property sys.boot_completed == 1 (timeout %ds)..", timeout)
+        _logger.debug(
+            "Waiting for android property sys.boot_completed == 1 (timeout %ds)..",
+            timeout,
+        )
 
         monotonic_timeout = time.monotonic() + timeout
 
         while time.monotonic() < monotonic_timeout:
             with contextlib.suppress(CommandFailedError):
-                output = self.shell("getprop sys.boot_completed", log_output=False, assert_ok=False).strip()
+                output = self.shell(
+                    "getprop sys.boot_completed", log_output=False, assert_ok=False
+                ).strip()
                 if "device unauthorized" in output:
                     self.restart_server(log_output=False)
                 elif output == "1":
@@ -281,7 +323,9 @@ class Adb:
         """Wait for android desktop is fully loaded
         Wait for logcat event from system buffer: Finished processing BOOT_COMPLETED for u10
         """
-        _logger.debug("Waiting for android desktop is fully loaded (timeout %ds)..", timeout)
+        _logger.debug(
+            "Waiting for android desktop is fully loaded (timeout %ds)..", timeout
+        )
         self.wait_for_log(
             log_buffer="system",
             log_tag="ActivityManager",
@@ -290,7 +334,11 @@ class Adb:
         )
 
     def wait_for_log(
-        self, log_buffer: str, log_tag: str, log_text: typing.Union[str, None] = None, timeout: float = 60
+        self,
+        log_buffer: str,
+        log_tag: str,
+        log_text: typing.Union[str, None] = None,
+        timeout: float = 60,
     ) -> None:
         """Wait for an android logcat message or event with specific text
         :param log_buffer: filter the log by buffer name (main, system, events, etc.)
@@ -298,7 +346,12 @@ class Adb:
         :param log_text: an optional parameter to specify the log text
         :param timeout: Timeout for waiting for a log message or event with specific text
         """
-        _logger.debug("Wait for android log: %s with text: %s (timeout %ds)..", log_tag, log_text, timeout)
+        _logger.debug(
+            "Wait for android log: %s with text: %s (timeout %ds)..",
+            log_tag,
+            log_text,
+            timeout,
+        )
 
         monotonic_timeout = time.monotonic() + timeout
         while time.monotonic() < monotonic_timeout:
@@ -312,7 +365,9 @@ class Adb:
                 return
             _logger.warning(f"log: {log_tag} with text: {log_text} not received yet")
             time.sleep(2)
-        raise Exception(f"Android log: {log_tag} with text: {log_text} not received after {timeout}s!")
+        raise Exception(
+            f"Android log: {log_tag} with text: {log_text} not received after {timeout}s!"
+        )
 
     def push(
         self,
@@ -343,7 +398,10 @@ class Adb:
             self.check_output("mkdir -p {}".format(str(on_device_path)), shell=True)
         for to_push_element in to_push_list:
             self._log("Pushing {} to {}".format(to_push_element, str(on_device_path)))
-            self.check_output("push {} {}".format(to_push_element, str(on_device_path)), timeout=timeout)
+            self.check_output(
+                "push {} {}".format(to_push_element, str(on_device_path)),
+                timeout=timeout,
+            )
 
         if sync:
             self.shell("sync", timeout=60)
@@ -389,7 +447,9 @@ class Adb:
     def reboot_and_wait(self, timeout=120, mode=None):
         initial_boot_id = self.get_boot_id()
 
-        datetime_timeout = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=timeout)
+        datetime_timeout = datetime.datetime.now(
+            tz=datetime.timezone.utc
+        ) + datetime.timedelta(seconds=timeout)
 
         self.trigger_reboot(mode)
 
@@ -399,7 +459,9 @@ class Adb:
             try:
                 time.sleep(1)
                 if initial_boot_id != (boot_id := self.get_boot_id(log_output=False)):
-                    _logger.info("Kernel boot_id changed to %s. Reboot completed.", boot_id)
+                    _logger.info(
+                        "Kernel boot_id changed to %s. Reboot completed.", boot_id
+                    )
                     return
             except AssertionError as e:
                 last_e = e
@@ -438,7 +500,8 @@ class Adb:
         self.reboot_and_wait(mode="recovery")
         self.wait_for_state(DeviceState.RECOVERY, timeout=120)
         self.gain_root_permissions()
-        self.shell("recovery --wipe_data", timeout=120)
+        # When device is restarted adbd looses connection and returns 255.
+        self.shell("recovery --wipe_data", timeout=120, valid_exit_codes=(0, 255))
         self.wait_for_state(DeviceState.DEVICE)
         self.wait_for_boot_complete()
 
@@ -479,7 +542,11 @@ class Adb:
         # Output is of the form:
         # Found 123 services:
         # 0   service: [android.ab.cd]
-        return [line.split()[1].rstrip(":") for line in output.split("\n")[1:] if line.strip()]
+        return [
+            line.split()[1].rstrip(":")
+            for line in output.split("\n")[1:]
+            if line.strip()
+        ]
 
     def wait_for_system_service_availability(self, service, timeout: int = 5) -> None:
         """Wait for a system service to become available on the device.

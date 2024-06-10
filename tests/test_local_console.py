@@ -117,3 +117,13 @@ def test_local_console_execute_command_regrep_not_found(mock_run):
     result = local_console.execute_command(command="ls -la", regrep="\\.cp{3}")
 
     assert "" == result
+
+
+@mock.patch("subprocess.run")
+def test_local_console_execute_when_valid_exit_code_was_returned(mock_run: mock.MagicMock):
+    completed_process = mock_run.return_value
+    completed_process.returncode = 5
+
+    res = local_console.execute_command(command="ls -la", assert_ok=True, valid_exit_codes=(5,))
+
+    assert res == completed_process.stdout.decode.return_value
