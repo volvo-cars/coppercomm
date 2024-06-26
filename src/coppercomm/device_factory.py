@@ -33,7 +33,8 @@ class DeviceFactory:
         return Adb(self.config.get_adb_device_id())
 
     def create_phone_adb(self) -> typing.List[Adb]:
-        return [Adb(phone["ADB_DEVICE_ID"]) for phone in self.config.get_extra_devices(device_type="android_phone")]
+        android_phones = self.config.get_extra_devices(device_type="phone", device_os="android")
+        return [Adb(phone["adb_device_id"]) for phone in android_phones]
 
     def create_ssh_over_adb(self) -> SSHConnection:
         port = self.config.get("QNX.port", 22)

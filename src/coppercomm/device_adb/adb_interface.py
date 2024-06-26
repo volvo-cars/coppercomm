@@ -16,17 +16,14 @@ import glob
 import logging
 import os
 import pathlib
+import re
 import shlex
 import subprocess
 import time
 import typing
-from typing import Union, Collection
+from typing import Collection, Union
 
-from coppercomm.device_common.exceptions import (
-    CommandFailedError,
-    CopperCommError,
-    RemountError,
-)
+from coppercomm.device_common.exceptions import CommandFailedError, CopperCommError, RemountError
 from coppercomm.device_common.local_console import execute_command
 
 _logger = logging.getLogger("adb_interface")
@@ -60,6 +57,25 @@ class Adb:
         self._adb_cmd = ["adb"]
         if adb_device_id:
             self._adb_cmd.extend(["-s", adb_device_id])
+
+    @staticmethod
+    def get_all_devices() -> typing.List[str]:
+        """Get all adb devices"""
+        adb_devices_output = execute_command(["adb", "devices"], timeout=60).strip()
+
+        # Example output:
+        # List of devices attached
+        # 172.20.21.253:5550	device
+        # emulator-5554	device
+        pattern = r"""
+                        ([\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}\.[\d]{1,3}:[\d]{1,5}|\w+|\w+\-\w+)
+                        # Matches a ip:port or device id or emulator id with "-" in the middle
+                        \t                     # One tab
+                        (?:device|recovery)    # Non capturing group for one of allowed device state.
+                        (?:\Z|\n)              # Non capturing group for end of string or end of line
+                        """
+
+        return re.findall(pattern, adb_devices_output, re.VERBOSE)
 
     def check_output(
         self,
@@ -133,15 +149,9 @@ class Adb:
 
     def is_userdebug(self) -> bool:
         """Check the build type of the device. If userdebug return True, otherwise False."""
-        return (
-            True
-            if self.shell("getprop ro.build.type").strip() == "userdebug"
-            else False
-        )
+        return True if self.shell("getprop ro.build.type").strip() == "userdebug" else False
 
-    def _change_root_permissions(
-        self, *, timeout: float, retries: int, root: bool
-    ) -> None:
+    def _change_root_permissions(self, *, timeout: float, retries: int, root: bool) -> None:
         requested_user = "root" if root else "shell"
         command = "root" if root else "unroot"
         self._log(f"Restarting ADB in {requested_user} user mode...")
@@ -161,9 +171,7 @@ class Adb:
             try:
                 new_user = self.shell("whoami").strip()
                 if new_user != requested_user:
-                    raise CommandFailedError(
-                        f"Switching ADB to {requested_user} user failed: got {new_user} instead"
-                    )
+                    raise CommandFailedError(f"Switching ADB to {requested_user} user failed: got {new_user} instead")
                 return
             except AssertionError as exc:
                 self._log(f"User verification attempt {attempt} failed: {exc}")
@@ -192,27 +200,33 @@ class Adb:
         """
         self._change_root_permissions(timeout=timeout, retries=retries, root=False)
 
-    def get_state(self) -> DeviceState:
+    def get_state(self, ignore_ids: typing.Optional[typing.Collection[str]] = None) -> DeviceState:
         """
         Get current device state
 
+        :param ignore_ids: List of adb_device_id to ignore in the check
         :returns: Current DeviceState
         """
-        current_state = self.check_output(
-            "get-state", shell=False, timeout=5, assert_ok=False, log_output=False
-        )
+        if ignore_ids is not None:
+            all_adb_devices = Adb.get_all_devices()
+            unknown_adb_device = [device for device in all_adb_devices if device not in ignore_ids]
+            if len(unknown_adb_device) > 1:
+                raise CopperCommError("More than one ADB unknown device is connected.")
+            elif len(unknown_adb_device) == 1:
+                adb_serial_id = unknown_adb_device[0]
+                if not self._adb_device_id:
+                    self._adb_device_id = adb_serial_id
+                    self._adb_cmd = ["adb", "-s", adb_serial_id]
+            else:
+                return DeviceState.NO_ADB_DEVICE
+        current_state = self.check_output("get-state", shell=False, timeout=5, assert_ok=False, log_output=False)
         if "daemon started successfully" in current_state:
-            current_state = self.check_output(
-                "get-state", shell=False, timeout=5, assert_ok=False, log_output=False
-            )
+            current_state = self.check_output("get-state", shell=False, timeout=5, assert_ok=False, log_output=False)
         max_retries = 10
         while max_retries > 0 and "device still authorizing" in current_state:
             time.sleep(1)
-            current_state = self.check_output(
-                "get-state", shell=False, timeout=5, assert_ok=False, log_output=False
-            )
+            current_state = self.check_output("get-state", shell=False, timeout=5, assert_ok=False, log_output=False)
             max_retries -= 1
-
         if "more than one" in current_state:
             raise CopperCommError(
                 "More than one ADB device is connected. 'adb_device_id' must be specified to read device state!"
@@ -291,9 +305,7 @@ class Adb:
                     self._log("Device in {} state".format(expected_state))
                     return
             time.sleep(polling_interval)
-        raise Exception(
-            f"Android state '{cur_state}' != {expected_state} after {timeout}s!"
-        )
+        raise Exception(f"Android state '{cur_state}' != {expected_state} after {timeout}s!")
 
     def wait_for_boot_complete(self, timeout: float = 240) -> None:
         """Wait for android to completely boot up.
@@ -309,9 +321,7 @@ class Adb:
 
         while time.monotonic() < monotonic_timeout:
             with contextlib.suppress(CommandFailedError):
-                output = self.shell(
-                    "getprop sys.boot_completed", log_output=False, assert_ok=False
-                ).strip()
+                output = self.shell("getprop sys.boot_completed", log_output=False, assert_ok=False).strip()
                 if "device unauthorized" in output:
                     self.restart_server(log_output=False)
                 elif output == "1":
@@ -323,9 +333,7 @@ class Adb:
         """Wait for android desktop is fully loaded
         Wait for logcat event from system buffer: Finished processing BOOT_COMPLETED for u10
         """
-        _logger.debug(
-            "Waiting for android desktop is fully loaded (timeout %ds)..", timeout
-        )
+        _logger.debug("Waiting for android desktop is fully loaded (timeout %ds)..", timeout)
         self.wait_for_log(
             log_buffer="system",
             log_tag="ActivityManager",
@@ -365,9 +373,7 @@ class Adb:
                 return
             _logger.warning(f"log: {log_tag} with text: {log_text} not received yet")
             time.sleep(2)
-        raise Exception(
-            f"Android log: {log_tag} with text: {log_text} not received after {timeout}s!"
-        )
+        raise Exception(f"Android log: {log_tag} with text: {log_text} not received after {timeout}s!")
 
     def push(
         self,
@@ -447,9 +453,7 @@ class Adb:
     def reboot_and_wait(self, timeout=120, mode=None):
         initial_boot_id = self.get_boot_id()
 
-        datetime_timeout = datetime.datetime.now(
-            tz=datetime.timezone.utc
-        ) + datetime.timedelta(seconds=timeout)
+        datetime_timeout = datetime.datetime.now(tz=datetime.timezone.utc) + datetime.timedelta(seconds=timeout)
 
         self.trigger_reboot(mode)
 
@@ -459,9 +463,7 @@ class Adb:
             try:
                 time.sleep(1)
                 if initial_boot_id != (boot_id := self.get_boot_id(log_output=False)):
-                    _logger.info(
-                        "Kernel boot_id changed to %s. Reboot completed.", boot_id
-                    )
+                    _logger.info("Kernel boot_id changed to %s. Reboot completed.", boot_id)
                     return
             except AssertionError as e:
                 last_e = e
@@ -542,11 +544,7 @@ class Adb:
         # Output is of the form:
         # Found 123 services:
         # 0   service: [android.ab.cd]
-        return [
-            line.split()[1].rstrip(":")
-            for line in output.split("\n")[1:]
-            if line.strip()
-        ]
+        return [line.split()[1].rstrip(":") for line in output.split("\n")[1:] if line.strip()]
 
     def wait_for_system_service_availability(self, service, timeout: int = 5) -> None:
         """Wait for a system service to become available on the device.

@@ -16,7 +16,7 @@ import logging
 import os
 from enum import Enum
 from pathlib import Path
-from typing import List, Optional, Tuple, Union
+from typing import Any, Dict, Generator, List, Optional, Tuple, Union
 
 DEFAULT_CONFIG_ENV_VARIABLE = "DEVICE_CONFIG_FILE"
 DEFAULT_CONFIG_FILENAME = "device_config.json"
@@ -74,7 +74,7 @@ class Config:
                     return False
         return True
 
-    def get(self, entry_path: str, default = None):
+    def get(self, entry_path: str, default=None):
         """Get entry under given path or return default value.
 
         Example:
@@ -135,22 +135,31 @@ class Config:
     def get_product_name(self) -> str:
         return self.device_config_data["PRODUCT_NAME"]
 
-    @throw_config_error_on_value_missing_in_config
-    def get_extra_devices(self, device_type: Optional[str] = None) -> List[dict]:
+    def get_extra_devices(
+        self, device_type: Optional[str] = None, **kwargs: Dict[str, Any]
+    ) -> Generator[Dict[str, Any], None, None]:
         """Get the list with extra devices.
 
         Each extra device is a dictionary with the mandatory TYPE key.
 
-        :param device_type: Type of the extra device to get e.g. android_phone, ios_phone, dhu, etc...
+        :param device_type: Type of the extra device to get e.g. phone, dhu etc...
+        :param kwargs: Additional key-value pairs to filter devices.
         """
-        if device_type:
-            return [
-                device
-                for device in self.device_config_data["EXTRA_DEVICES"]
-                if device["DEVICE_TYPE"] == device_type
-            ]
-        else:
+
+        def _device_matches(device_param: Dict[str, Any]) -> bool:
+            if device_type and device_param["device_type"] != device_type:
+                return False
+            return all(device_param.get(field) == value for field, value in kwargs.items())
+
+        @throw_config_error_on_value_missing_in_config
+        def _get_extra_devices() -> List[Dict[str, Any]]:
             return self.device_config_data["EXTRA_DEVICES"]
+
+        extra_devices = _get_extra_devices()
+
+        for device in extra_devices:
+            if _device_matches(device):
+                yield device
 
     @throw_config_error_on_value_missing_in_config
     def get_qnx_ip(self) -> str:

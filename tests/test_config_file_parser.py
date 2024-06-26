@@ -1,10 +1,15 @@
-import pytest
 from unittest.mock import MagicMock, Mock, patch, sentinel
+
+import pytest
 
 from coppercomm import config_file_parser
 
 
 class TestConfig:
+
+    @pytest.fixture
+    def config_mock(self):
+        return MagicMock(name="Config")
 
     def test_has_entry_when_exists(self):
         config = config_file_parser.Config({"a": {"b": {"c": 1}}})
@@ -30,6 +35,78 @@ class TestConfig:
         assert config.has_entry("a.1.b") is True
         assert config.has_entry("a.b.c") is False
 
+    @pytest.mark.parametrize(
+        "extra_devices, expected_devices, get_type, get_os",
+        [
+            (
+                [{"device_type": "phone", "device_os": "android"}, {"device_type": "phone", "device_os": "ios"}],
+                [{"device_type": "phone", "device_os": "android"}],
+                "phone",
+                "android",
+            ),
+            (
+                [{"device_type": "pc", "device_os": "macos"}, {"device_type": "android", "device_os": "dhu"}],
+                [{"device_type": "pc", "device_os": "macos"}],
+                "pc",
+                "macos",
+            ),
+        ],
+    )
+    def test_get_extra_devices_with_type_and_os(self, config_mock, extra_devices, expected_devices, get_type, get_os):
+        config_mock.device_config_data = {"EXTRA_DEVICES": extra_devices}
+        devices = list(config_file_parser.Config.get_extra_devices(config_mock, device_type=get_type, device_os=get_os))
+
+        assert devices == expected_devices
+
+    @pytest.mark.parametrize(
+        "extra_devices, expected_devices, get_type",
+        [
+            (
+                [{"device_type": "phone", "device_os": "android"}, {"device_type": "dhu", "device_os": "android"}],
+                [{"device_type": "dhu", "device_os": "android"}],
+                "dhu",
+            ),
+            (
+                [{"device_type": "phone", "device_os": "android"}, {"device_type": "phone", "device_os": "ios"}],
+                [{"device_type": "phone", "device_os": "android"}, {"device_type": "phone", "device_os": "ios"}],
+                "phone",
+            ),
+        ],
+    )
+    def test_get_extra_devices_with_type(self, config_mock, extra_devices, expected_devices, get_type):
+        config_mock.device_config_data = {"EXTRA_DEVICES": extra_devices}
+        devices = list(config_file_parser.Config.get_extra_devices(config_mock, device_type=get_type))
+
+        assert devices == expected_devices
+
+    @pytest.mark.parametrize(
+        "extra_devices, expected_devices",
+        [
+            (
+                [{"device_type": "phone", "device_os": "android"}, {"device_type": "phone", "device_os": "ios"}],
+                [{"device_type": "phone", "device_os": "android"}, {"device_type": "phone", "device_os": "ios"}],
+            ),
+            (
+                [{"device_type": "emulator", "device_os": "android"}],
+                [{"device_type": "emulator", "device_os": "android"}],
+            ),
+        ],
+    )
+    def test_get_extra_devices_all(self, config_mock, extra_devices, expected_devices):
+        config_mock.device_config_data = {"EXTRA_DEVICES": extra_devices}
+        devices = list(config_file_parser.Config.get_extra_devices(config_mock))
+
+        assert devices == expected_devices
+
+    @patch("coppercomm.config_file_parser")
+    def test_get_extra_devices_raise_error(self, config_mock):
+        config_mock.device_config_data = {}
+
+        with pytest.raises(config_file_parser.ConfigFileParseError) as resp:
+            list(config_file_parser.Config.get_extra_devices(config_mock))
+
+        assert "Unable to retrieve value from config." in resp.value.args
+
 
 @patch("coppercomm.config_file_parser.Path")
 @patch("os.getenv")
@@ -47,6 +124,7 @@ def test_config_file_from_variable_1(getenv_m, path_class_m):
     assert resp is file_in_device_config_path
     path_class_m.assert_called_once_with(some_str_p)
     device_config_path.__truediv__.assert_called_once_with("my_file.json")
+
 
 @patch("coppercomm.config_file_parser.Path")
 @patch("os.getenv")
@@ -87,7 +165,6 @@ def test_load_config_2(jsload_m, from_variable_m, from_path_m):
     """When loading from path given by user"""
     from_variable_m.return_value = None
     my_path = from_path_m.return_value = MagicMock(name="myPath")
-
 
     config, config_path = config_file_parser.load_config.__wrapped__(my_path, sentinel.my_name)
 

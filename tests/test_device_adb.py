@@ -15,9 +15,11 @@ from unittest.mock import call
 
 from coppercomm.device_adb import adb_interface
 from coppercomm.device_adb.adb_interface import DeviceState
-from coppercomm.device_common.exceptions import RemountError
+from coppercomm.device_common.exceptions import CopperCommError, RemountError
 
 test_adb_id = "xyz"
+
+import pytest
 
 
 @mock.patch("coppercomm.device_adb.adb_interface.execute_command")
@@ -29,7 +31,8 @@ def test_adb_check_output(mock_execute):
         assert_ok=True,
         regrep=None,
         timeout=30,
-        log_output=True, valid_exit_codes=(0,)
+        log_output=True,
+        valid_exit_codes=(0,),
     )
     assert "a.txt b.txt" == result
 
@@ -43,7 +46,8 @@ def test_adb_check_output_shell(mock_execute):
         assert_ok=True,
         regrep=None,
         timeout=30,
-        log_output=True, valid_exit_codes=(0,)
+        log_output=True,
+        valid_exit_codes=(0,),
     )
 
 
@@ -56,7 +60,8 @@ def test_adb_shell(mock_execute):
         assert_ok=True,
         regrep=None,
         timeout=30,
-        log_output=True, valid_exit_codes=(0,)
+        log_output=True,
+        valid_exit_codes=(0,),
     )
 
 
@@ -71,35 +76,40 @@ def test_adb_gain_root_permissions(mock_execute):
             assert_ok=False,
             regrep=None,
             timeout=5,
-            log_output=False, valid_exit_codes=(0,)
+            log_output=False,
+            valid_exit_codes=(0,),
         ),
         call(
             ["adb", "-s", test_adb_id, "shell", "whoami"],
             assert_ok=True,
             regrep=None,
             timeout=30,
-            log_output=True, valid_exit_codes=(0,)
+            log_output=True,
+            valid_exit_codes=(0,),
         ),
         call(
             ["adb", "-s", test_adb_id, "root"],
             assert_ok=False,
             regrep=None,
             timeout=30,
-            log_output=True, valid_exit_codes=(0,)
+            log_output=True,
+            valid_exit_codes=(0,),
         ),
         call(
             ["adb", "-s", test_adb_id, "get-state"],
             assert_ok=False,
             regrep=None,
             timeout=5,
-            log_output=False, valid_exit_codes=(0,)
+            log_output=False,
+            valid_exit_codes=(0,),
         ),
         call(
             ["adb", "-s", test_adb_id, "shell", "whoami"],
             assert_ok=True,
             regrep=None,
             timeout=30,
-            log_output=True, valid_exit_codes=(0,)
+            log_output=True,
+            valid_exit_codes=(0,),
         ),
     ]
     mock_execute.assert_has_calls(calls)
@@ -116,14 +126,16 @@ def test_adb_gain_root_permissions_already_root(mock_execute):
             assert_ok=False,
             regrep=None,
             timeout=5,
-            log_output=False, valid_exit_codes=(0,)
+            log_output=False,
+            valid_exit_codes=(0,),
         ),
         call(
             ["adb", "-s", test_adb_id, "shell", "whoami"],
             assert_ok=True,
             regrep=None,
             timeout=30,
-            log_output=True, valid_exit_codes=(0,)
+            log_output=True,
+            valid_exit_codes=(0,),
         ),
     ]
     mock_execute.assert_has_calls(calls)
@@ -140,7 +152,8 @@ def test_adb_get_state(mock_execute):
         assert_ok=False,
         regrep=None,
         timeout=5,
-        log_output=False, valid_exit_codes=(0,)
+        log_output=False,
+        valid_exit_codes=(0,),
     )
     assert DeviceState.DEVICE == result
 
@@ -156,23 +169,61 @@ def test_adb_get_state_no_device(mock_execute):
         assert_ok=False,
         regrep=None,
         timeout=5,
-        log_output=False, valid_exit_codes=(0,)
+        log_output=False,
+        valid_exit_codes=(0,),
     )
+    assert DeviceState.NO_ADB_DEVICE == result
+
+
+@mock.patch("coppercomm.device_adb.adb_interface.Adb.get_all_devices")
+@mock.patch("coppercomm.device_adb.adb_interface.execute_command")
+def test_adb_get_state_ignore_ids(mock_execute, all_devices_m):
+    mock_execute.return_value = "device"
+    all_devices_m.return_value = [test_adb_id, "id1", "id2"]
+
+    result = adb_interface.Adb().get_state(ignore_ids=["id1", "id2"])
+
+    mock_execute.assert_called_once_with(
+        ["adb", "-s", test_adb_id, "get-state"],
+        assert_ok=False,
+        regrep=None,
+        timeout=5,
+        log_output=False,
+        valid_exit_codes=(0,),
+    )
+    assert DeviceState.DEVICE == result
+
+
+@mock.patch("coppercomm.device_adb.adb_interface.Adb.get_all_devices")
+def test_adb_get_state_ignore_ids_more_than_one_unknown(all_devices_m):
+    all_devices_m.return_value = [test_adb_id, "id1", "id2"]
+
+    with pytest.raises(CopperCommError) as resp:
+        adb_interface.Adb().get_state(ignore_ids=["id1"])
+
+    assert "More than one ADB unknown device is connected." in resp.value.args
+
+
+@mock.patch("coppercomm.device_adb.adb_interface.Adb.get_all_devices")
+def test_adb_get_state_ignore_ids_more_than_one_unknown(all_devices_m):
+    all_devices_m.return_value = []
+
+    result = adb_interface.Adb().get_state(ignore_ids=["id1"])
+
     assert DeviceState.NO_ADB_DEVICE == result
 
 
 @mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_wait_for_state(mock_execute):
     mock_execute.return_value = "recovery"
-    adb_interface.Adb(adb_device_id=test_adb_id).wait_for_state(
-        state=DeviceState.RECOVERY
-    )
+    adb_interface.Adb(adb_device_id=test_adb_id).wait_for_state(state=DeviceState.RECOVERY)
     mock_execute.assert_called_once_with(
         ["adb", "-s", test_adb_id, "get-state"],
         assert_ok=False,
         regrep=None,
         timeout=5,
-        log_output=False, valid_exit_codes=(0,)
+        log_output=False,
+        valid_exit_codes=(0,),
     )
 
 
@@ -194,21 +245,24 @@ def test_adb_push(mock_execute):
             assert_ok=True,
             regrep=None,
             timeout=30,
-            log_output=True, valid_exit_codes=(0,)
+            log_output=True,
+            valid_exit_codes=(0,),
         ),
         call(
             ["adb", "-s", test_adb_id, "push", tmpdir, "/dev/disk/test"],
             assert_ok=True,
             regrep=None,
             timeout=60,
-            log_output=True, valid_exit_codes=(0,)
+            log_output=True,
+            valid_exit_codes=(0,),
         ),
         call(
             ["adb", "-s", test_adb_id, "shell", "sync"],
             assert_ok=True,
             regrep=None,
             timeout=60,
-            log_output=True, valid_exit_codes=(0,)
+            log_output=True,
+            valid_exit_codes=(0,),
         ),
     ]
     mock_execute.assert_has_calls(calls)
@@ -238,16 +292,15 @@ def test_adb_pull(mock_execute):
     mock_execute.return_value = None
 
     with tempfile.TemporaryDirectory() as tmpdir1, tempfile.TemporaryDirectory() as tmpdir2:
-        adb_interface.Adb(adb_device_id=test_adb_id).pull(
-            local_path=tmpdir1, on_device_path=tmpdir2
-        )
+        adb_interface.Adb(adb_device_id=test_adb_id).pull(local_path=tmpdir1, on_device_path=tmpdir2)
 
     mock_execute.assert_called_once_with(
         ["adb", "-s", test_adb_id, "pull", tmpdir2, tmpdir1],
         assert_ok=True,
         regrep=None,
         timeout=60,
-        log_output=True, valid_exit_codes=(0,)
+        log_output=True,
+        valid_exit_codes=(0,),
     )
 
 
@@ -262,7 +315,8 @@ def test_adb_get_boot_id(mock_execute):
         assert_ok=True,
         regrep=None,
         timeout=30,
-        log_output=True, valid_exit_codes=(0,)
+        log_output=True,
+        valid_exit_codes=(0,),
     )
     assert "123" == result
 
@@ -276,7 +330,8 @@ def test_adb_trigger_reboot(mock_execute):
         assert_ok=True,
         regrep=None,
         timeout=30,
-        log_output=True, valid_exit_codes=(0,)
+        log_output=True,
+        valid_exit_codes=(0,),
     )
 
 
@@ -298,14 +353,16 @@ def test_adb_reboot_and_wait(mock_execute):
             assert_ok=True,
             regrep=None,
             timeout=30,
-            log_output=True, valid_exit_codes=(0,)
+            log_output=True,
+            valid_exit_codes=(0,),
         ),
         call(
             ["adb", "-s", test_adb_id, "reboot"],
             assert_ok=True,
             regrep=None,
             timeout=30,
-            log_output=True , valid_exit_codes=(0,)
+            log_output=True,
+            valid_exit_codes=(0,),
         ),
         call(
             [
@@ -319,7 +376,8 @@ def test_adb_reboot_and_wait(mock_execute):
             assert_ok=True,
             regrep=None,
             timeout=30,
-            log_output=False , valid_exit_codes=(0,)
+            log_output=False,
+            valid_exit_codes=(0,),
         ),
     ]
 
@@ -348,14 +406,16 @@ def test_adb_reboot_and_wait_unable_to_reboot(mock_execute):
             assert_ok=True,
             regrep=None,
             timeout=30,
-            log_output=True, valid_exit_codes=(0,)
+            log_output=True,
+            valid_exit_codes=(0,),
         ),
         call(
             ["adb", "-s", test_adb_id, "reboot"],
             assert_ok=True,
             regrep=None,
             timeout=30,
-            log_output=True, valid_exit_codes=(0,)
+            log_output=True,
+            valid_exit_codes=(0,),
         ),
         call(
             [
@@ -369,7 +429,8 @@ def test_adb_reboot_and_wait_unable_to_reboot(mock_execute):
             assert_ok=True,
             regrep=None,
             timeout=30,
-            log_output=False, valid_exit_codes=(0,)
+            log_output=False,
+            valid_exit_codes=(0,),
         ),
     ]
 
@@ -631,3 +692,22 @@ def test_adb_mount_filesytem_as_root_unable_to_remount(mock_execute):
         ),
     ]
     mock_execute.assert_has_calls(calls)
+
+
+@pytest.mark.parametrize(
+    "device_ids, device_states, expected_devices",
+    [
+        (["172.20.21.253:5550", "emulator-5554"], ["device", "device"], ["172.20.21.253:5550", "emulator-5554"]),
+        (["device1", "device11", "device111"], ["device", "recovery", "offline"], ["device1", "device11"]),
+        (["device1"], ["unauthorized"], []),
+    ],
+)
+@mock.patch("coppercomm.device_adb.adb_interface.execute_command")
+def test_get_all_devices(mock_execute, device_ids, device_states, expected_devices):
+    mock_execute.return_value = "List of devices attached\n" + "\n".join(
+        f"{device_id}\t{device_state}" for device_id, device_state in zip(device_ids, device_states)
+    )
+
+    result = adb_interface.Adb.get_all_devices()
+
+    assert result == expected_devices
