@@ -136,7 +136,7 @@ class Config:
         return self.device_config_data["PRODUCT_NAME"]
 
     def get_extra_devices(
-        self, device_type: Optional[str] = None, **kwargs: Dict[str, Any]
+        self, device_type: Optional[str] = None, **kwargs: Any
     ) -> Generator[Dict[str, Any], None, None]:
         """Get the list with extra devices.
 
