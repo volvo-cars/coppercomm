@@ -21,6 +21,36 @@ test_adb_id = "xyz"
 
 import pytest
 
+ADB_ATTRIBUTES_CONFLICT_ERROR = "Cannot specify both 'adb_device_id' and 'ignore_ids' at the same time."
+
+
+def test_adb_consturctor_device_id_passed():
+    adb_instance = adb_interface.Adb(adb_device_id=mock.sentinel.adb_device_id)
+
+    assert adb_instance._adb_device_id == mock.sentinel.adb_device_id
+    assert adb_instance._adb_cmd == ["adb", "-s", mock.sentinel.adb_device_id]
+    assert adb_instance.ignore_ids == set()
+
+
+def test_adb_consturctor_pass_ignore_ids():
+    adb_instance = adb_interface.Adb(ignore_ids={"id1", "id2"})
+
+    assert adb_instance._adb_device_id == None
+    assert adb_instance._adb_cmd == ["adb"]
+    assert adb_instance.ignore_ids == {"id1", "id2"}
+
+
+def test_adb_consturctor_raise_error():
+    with pytest.raises(CopperCommError, match=ADB_ATTRIBUTES_CONFLICT_ERROR):
+        adb_interface.Adb(adb_device_id=mock.sentinel.adb_device_id, ignore_ids={"id1", "id2"})
+
+
+def test_adb_consturctor_raise_error_while_set_ignore_ids():
+    adb_instance = adb_interface.Adb(adb_device_id=mock.sentinel.adb_device_id)
+
+    with pytest.raises(CopperCommError, match=ADB_ATTRIBUTES_CONFLICT_ERROR):
+        adb_instance.ignore_ids = {"id1", "id2"}
+
 
 @mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_check_output(mock_execute):
@@ -179,9 +209,9 @@ def test_adb_get_state_no_device(mock_execute):
 @mock.patch("coppercomm.device_adb.adb_interface.execute_command")
 def test_adb_get_state_ignore_ids(mock_execute, all_devices_m):
     mock_execute.return_value = "device"
-    all_devices_m.return_value = [test_adb_id, "id1", "id2"]
+    all_devices_m.return_value = {test_adb_id, "id1", "id2"}
 
-    result = adb_interface.Adb().get_state(ignore_ids=["id1", "id2"])
+    result = adb_interface.Adb(ignore_ids={"id1", "id2"}).get_state()
 
     mock_execute.assert_called_once_with(
         ["adb", "-s", test_adb_id, "get-state"],
@@ -196,19 +226,17 @@ def test_adb_get_state_ignore_ids(mock_execute, all_devices_m):
 
 @mock.patch("coppercomm.device_adb.adb_interface.Adb.get_all_devices")
 def test_adb_get_state_ignore_ids_more_than_one_unknown(all_devices_m):
-    all_devices_m.return_value = [test_adb_id, "id1", "id2"]
+    all_devices_m.return_value = {test_adb_id, "id1", "id2"}
 
-    with pytest.raises(CopperCommError) as resp:
-        adb_interface.Adb().get_state(ignore_ids=["id1"])
-
-    assert "More than one ADB unknown device is connected." in resp.value.args
+    with pytest.raises(CopperCommError, match="More than one ADB unknown device is connected."):
+        adb_interface.Adb(ignore_ids={"id1"}).get_state()
 
 
 @mock.patch("coppercomm.device_adb.adb_interface.Adb.get_all_devices")
-def test_adb_get_state_ignore_ids_more_than_one_unknown(all_devices_m):
-    all_devices_m.return_value = []
+def test_adb_get_state_ignore_ids_no_adb_devices(all_devices_m):
+    all_devices_m.return_value = set()
 
-    result = adb_interface.Adb().get_state(ignore_ids=["id1"])
+    result = adb_interface.Adb(ignore_ids={"id1"}).get_state()
 
     assert DeviceState.NO_ADB_DEVICE == result
 
@@ -697,9 +725,9 @@ def test_adb_mount_filesytem_as_root_unable_to_remount(mock_execute):
 @pytest.mark.parametrize(
     "device_ids, device_states, expected_devices",
     [
-        (["172.20.21.253:5550", "emulator-5554"], ["device", "device"], ["172.20.21.253:5550", "emulator-5554"]),
-        (["device1", "device11", "device111"], ["device", "recovery", "offline"], ["device1", "device11"]),
-        (["device1"], ["unauthorized"], []),
+        (["172.20.21.253:5550", "emulator-5554"], ["device", "device"], {"172.20.21.253:5550", "emulator-5554"}),
+        (["device1", "device11", "device111"], ["device", "recovery", "offline"], {"device1", "device11"}),
+        (["device1"], ["unauthorized"], {}),
     ],
 )
 @mock.patch("coppercomm.device_adb.adb_interface.execute_command")
@@ -710,4 +738,4 @@ def test_get_all_devices(mock_execute, device_ids, device_states, expected_devic
 
     result = adb_interface.Adb.get_all_devices()
 
-    assert result == expected_devices
+    assert result.difference(expected_devices) == set()

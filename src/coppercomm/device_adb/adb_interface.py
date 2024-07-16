@@ -50,16 +50,37 @@ class Adb:
 
     :param adb_device_id: Serial number / ID of adb-compatible device. If None or empty then
         '-s' flag will NOT be used at all.
+    :param ignore_ids: Collection of ADB device IDs to ignore them while checking for device state.
+            Prevents from reading state of wrong device.
     """
 
-    def __init__(self, adb_device_id: typing.Optional[str] = None) -> None:
+    def __init__(
+        self, adb_device_id: typing.Optional[str] = None, ignore_ids: typing.Optional[typing.Collection[str]] = None
+    ) -> None:
+        Adb._validate_attributes(adb_device_id, ignore_ids)
         self._adb_device_id = adb_device_id
         self._adb_cmd = ["adb"]
         if adb_device_id:
             self._adb_cmd.extend(["-s", adb_device_id])
+        self._ignore_ids = set(ignore_ids) if ignore_ids is not None else set()
 
     @staticmethod
-    def get_all_devices() -> typing.List[str]:
+    def _validate_attributes(adb_device_id: typing.Optional[str], ignore_ids: typing.Optional[typing.Collection[str]]):
+        if adb_device_id and ignore_ids:
+            raise CopperCommError("Cannot specify both 'adb_device_id' and 'ignore_ids' at the same time.")
+
+    @property
+    def ignore_ids(self):
+        return self._ignore_ids
+
+    @ignore_ids.setter
+    def ignore_ids(self, ignore_ids: typing.Optional[typing.Collection[str]]):
+        """Set ignore_ids and check if it is not set together with adb_device_id, otherwise raise an error."""
+        Adb._validate_attributes(self._adb_device_id, ignore_ids)
+        self._ignore_ids = set(ignore_ids) if ignore_ids is not None else set()
+
+    @staticmethod
+    def get_all_devices() -> typing.Set[str]:
         """Get all adb devices"""
         adb_devices_output = execute_command(["adb", "devices"], timeout=60).strip()
 
@@ -75,7 +96,7 @@ class Adb:
                         (?:\Z|\n)              # Non capturing group for end of string or end of line
                         """
 
-        return re.findall(pattern, adb_devices_output, re.VERBOSE)
+        return set(re.findall(pattern, adb_devices_output, re.VERBOSE))
 
     def check_output(
         self,
@@ -200,23 +221,23 @@ class Adb:
         """
         self._change_root_permissions(timeout=timeout, retries=retries, root=False)
 
-    def get_state(self, ignore_ids: typing.Optional[typing.Collection[str]] = None) -> DeviceState:
+    def get_state(self) -> DeviceState:
         """
         Get current device state
 
-        :param ignore_ids: List of adb_device_id to ignore in the check
+        If _adb_device_id is not set, check for connected devices.
+        Use the device if only one is available; otherwise, raise an error if multiple devices are connected.
         :returns: Current DeviceState
         """
-        if ignore_ids is not None:
+        if not self._adb_device_id:
             all_adb_devices = Adb.get_all_devices()
-            unknown_adb_device = [device for device in all_adb_devices if device not in ignore_ids]
-            if len(unknown_adb_device) > 1:
+            all_adb_devices.difference_update(self.ignore_ids)
+            if len(all_adb_devices) > 1:
                 raise CopperCommError("More than one ADB unknown device is connected.")
-            elif len(unknown_adb_device) == 1:
-                adb_serial_id = unknown_adb_device[0]
-                if not self._adb_device_id:
-                    self._adb_device_id = adb_serial_id
-                    self._adb_cmd = ["adb", "-s", adb_serial_id]
+            elif len(all_adb_devices) == 1:
+                adb_serial_id = all_adb_devices.pop()
+                self._adb_device_id = adb_serial_id
+                self._adb_cmd = ["adb", "-s", adb_serial_id]
             else:
                 return DeviceState.NO_ADB_DEVICE
         current_state = self.check_output("get-state", shell=False, timeout=5, assert_ok=False, log_output=False)
