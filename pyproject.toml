@@ -17,6 +17,8 @@ dependencies = ["types-paramiko", "mypy >= 0.991"]
 [tool.hatch.build.targets.wheel]
 packages = ["src/coppercomm"]
 
+[tool.hatch.build.targets.sdist]
+include = ["src/coppercomm"]
 
 [tool.hatch.envs.default.scripts]
 test = "pytest {args:tests}"
