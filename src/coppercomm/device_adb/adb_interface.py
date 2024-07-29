@@ -328,7 +328,7 @@ class Adb:
             time.sleep(polling_interval)
         raise Exception(f"Android state '{cur_state}' != {expected_state} after {timeout}s!")
 
-    def wait_for_boot_complete(self, timeout: float = 240) -> None:
+    def wait_for_boot_complete(self, timeout: float = 240, log_output=False) -> None:
         """Wait for android to completely boot up.
 
         Waits for property: sys.boot_completed == 1
@@ -342,9 +342,9 @@ class Adb:
 
         while time.monotonic() < monotonic_timeout:
             with contextlib.suppress(CommandFailedError):
-                output = self.shell("getprop sys.boot_completed", log_output=False, assert_ok=False).strip()
+                output = self.shell("getprop sys.boot_completed", log_output=log_output, assert_ok=False).strip()
                 if "device unauthorized" in output:
-                    self.restart_server(log_output=False)
+                    self.restart_server(log_output=log_output)
                 elif output == "1":
                     return
             time.sleep(2)

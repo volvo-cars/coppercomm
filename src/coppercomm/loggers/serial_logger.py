@@ -14,7 +14,7 @@ import logging
 import typing
 from contextlib import contextmanager
 
-if typing.TYPE_CHECKING:
+if typing.TYPE_CHECKING:  # pragma: nocover
     from pathlib import Path
 
     from coppercomm.device_common.interfaces import ConsoleInterface
