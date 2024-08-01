@@ -16,6 +16,7 @@ from pathlib import Path
 from coppercomm.config_file_parser import Config, ConfigFileParseError, load_config
 from coppercomm.device_adb.adb_interface import Adb
 from coppercomm.device_serial.device_serial import SerialConnection
+from coppercomm.fastboot_interface import Fastboot
 from coppercomm.ssh_connection.ssh_connection import SSHConnection
 
 
@@ -30,11 +31,9 @@ class DeviceFactory:
         self.config: Config = config
         self.config_file: Path = config_file
 
-    @functools.lru_cache
     def create_adb(self) -> Adb:
         return Adb(self.config.get_adb_device_id())
 
-    @functools.lru_cache
     def create_phone_adb(self) -> typing.List[Adb]:
         android_phones = self.config.get_extra_devices(device_type="phone", device_os="android")
         return [Adb(phone["adb_device_id"]) for phone in android_phones]
@@ -74,3 +73,6 @@ class DeviceFactory:
 
     def create_serial_devices(self):
         return {t: self.create_serial(t) for t in self.config.get_name_of_available_serials_in_config()}
+
+    def create_fastboot(self) -> Fastboot:
+        return Fastboot(self.config.get_fastboot_device_id())
