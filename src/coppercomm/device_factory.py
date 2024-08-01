@@ -9,6 +9,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+import functools
 import typing
 from pathlib import Path
 
@@ -29,18 +30,22 @@ class DeviceFactory:
         self.config: Config = config
         self.config_file: Path = config_file
 
+    @functools.lru_cache
     def create_adb(self) -> Adb:
         return Adb(self.config.get_adb_device_id())
 
+    @functools.lru_cache
     def create_phone_adb(self) -> typing.List[Adb]:
         android_phones = self.config.get_extra_devices(device_type="phone", device_os="android")
         return [Adb(phone["adb_device_id"]) for phone in android_phones]
 
+    @functools.lru_cache
     def create_ssh_over_adb(self) -> SSHConnection:
         port = self.config.get("QNX.port", 22)
         proxy_command = self.config["QNX.proxy_command"]
         return SSHConnection(ip=self.config.get_qnx_ip(), port=port, proxy_command=proxy_command)
 
+    @functools.lru_cache
     def create_broadrreach_ssh(self) -> SSHConnection:
         if self.config.has_entry("QNX.proxy_command"):
             # Network adapter is not connected. Use SSH over ADB.
@@ -49,6 +54,7 @@ class DeviceFactory:
         port = self.config.get("QNX.port", 22)
         return SSHConnection(ip=ip, port=port)
 
+    @functools.lru_cache
     def create_qnx_ssh(self) -> SSHConnection:
         """Create SSHConnection object based on the config file.
 
@@ -60,10 +66,11 @@ class DeviceFactory:
         except ConfigFileParseError:
             return self.create_ssh_over_adb()
 
+    @functools.lru_cache
     def create_serial(self, serial_device_type: str) -> SerialConnection:
         if serial_device_type not in self.config.get_name_of_available_serials_in_config():
             raise DeviceResourceUnavailableError(f"{serial_device_type}")
         return SerialConnection(self.config, serial_device_type)
 
     def create_serial_devices(self):
-        return {t: SerialConnection(self.config, t) for t in self.config.get_name_of_available_serials_in_config()}
+        return {t: self.create_serial(t) for t in self.config.get_name_of_available_serials_in_config()}
