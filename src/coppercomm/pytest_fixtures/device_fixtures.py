@@ -27,7 +27,7 @@ import pytest
 import typing
 from pathlib import Path
 
-from coppercomm.config_file_parser import Config
+from coppercomm.config_file_parser import Config, ConfigFileParseError
 from coppercomm.device_adb.adb_interface import Adb
 from coppercomm.device_factory import DeviceFactory
 from coppercomm.device_serial.device_serial import SerialConnection
@@ -40,8 +40,11 @@ def device_factory(create_device_config: Path) -> DeviceFactory:
 
 
 @pytest.fixture(scope="session")
-def adb(device_factory: DeviceFactory) -> Adb:
-    return device_factory.create_adb()
+def adb(device_factory: DeviceFactory) -> typing.Optional[Adb]:
+    try:
+        return device_factory.create_adb()
+    except ConfigFileParseError:
+        return None
 
 
 @pytest.fixture(scope="session")
