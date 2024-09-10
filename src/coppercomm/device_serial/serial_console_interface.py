@@ -237,9 +237,9 @@ class SerialConsoleInterface(threading.Thread):
             )
             return
         self._raise_exception(
-            "Connection address %s is used by process with PID: %s",
+            "Connection address {} is used by process with PID: {}".format(
             connection_address,
-            result.stdout.decode(sys.getdefaultencoding()).replace("\n", ""),
+            result.stdout.decode(sys.getdefaultencoding()).replace("\n", "")),
             exception_cls=SerialConnectionError,
             log_level=logging.ERROR,
         )
