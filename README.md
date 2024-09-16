@@ -3,7 +3,7 @@ Coppercomm
 
 Coppercomm is a lightweight library, written in Python. It is used by tests for communicating through different protocols.
 
-![Coppercomm overview](images/coppercomm_overview.png)
+![Coppercomm overview](https://raw.githubusercontent.com/volvo-cars/coppercomm/cf0f53986e5d438f1c485191af390252ece99e19/images/coppercomm_overview.png)
 
 Introduction
 ------------
@@ -12,10 +12,10 @@ One challenge with sharing test cases across different organizations/companies i
 
 When test cases across companies and organizations are using Coppercomm, the test cases can be executed without modifications or if-statements for different environments, in the test cases. It becomes convenient to execute test cases at different places.
 
-![Coppercomm overview](images/coppercomm_config.png)
+![Coppercomm overview](https://raw.githubusercontent.com/volvo-cars/coppercomm/cf0f53986e5d438f1c485191af390252ece99e19/images/coppercomm_config.png)
 
 Examples
 --------
 There are some examples on how to use it here:
-[test_example_pytest.py](examples/test_example_pytest.py).
+[test_example_pytest.py](https://raw.githubusercontent.com/volvo-cars/coppercomm/cf0f53986e5d438f1c485191af390252ece99e19/examples/test_example_pytest.py).
 

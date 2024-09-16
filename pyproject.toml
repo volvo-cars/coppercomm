@@ -6,24 +6,32 @@ build-backend = "hatchling.build"
 name = "coppercomm"
 version = "0.1.0"
 description = "Coppercomm"
+readme = "README.md"
 authors = [{ name = "Volvo Cars" }]
 license = { file = "LICENSE" }
+requires-python = ">=3.8"
 
 dependencies = ["paramiko", "pyserial", "pexpect"]
 
+[project.urls]
+Homepage = "https://github.com/volvo-cars/coppercomm"
+Issues = "https://github.com/volvo-cars/coppercomm/issues"
+
 [tool.hatch.envs.default]
 dependencies = ["types-paramiko", "mypy >= 0.991"]
+path = "objs/.env"
+
+[tool.hatch.build]
+directory = "objs/dist"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/coppercomm"]
 
-[tool.hatch.build.targets.sdist]
-include = ["src/coppercomm"]
 
 [tool.hatch.envs.default.scripts]
-test = "pytest {args:tests}"
-system-test = "pytest ./system_tests"
-test-cov = "coverage run -m pytest {args:tests}"
+test = "pytest -o cache_dir=objs/.pytest_cache {args:tests}"
+system-test = "pytest -o cache_dir=objs/.pytest_cache ./system_tests"
+test-cov = "coverage run -m pytest -o cache_dir=objs/.pytest_cache {args:tests}"
 cov-report = ["- coverage combine", "coverage report"]
 cov = ["test-cov", "cov-report"]
 

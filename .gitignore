@@ -8,6 +8,7 @@ __pycache__/**
 .idea/
 test_run_logs/
 
+objs
 dist
 build
 
